@@ -9,11 +9,19 @@ async function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const staffVerify = await STAFF.findById(decoded.id).populate("role");
-    if (!staffVerify) {
+    
+    let userRecord = await STAFF.findById(decoded.id).populate("role");
+    
+    if (!userRecord) {
+      const USER = require("../model/user");
+      userRecord = await USER.findById(decoded.id);
+    }
+
+    if (!userRecord) {
       return res.status(401).json({ status: "Fail", message: "Invalid token" });
     }
-    req.user = staffVerify;
+    
+    req.user = userRecord;
     next();
   } catch (err) {
     res.status(401).json({ status: "Fail", message: "Invalid token" });

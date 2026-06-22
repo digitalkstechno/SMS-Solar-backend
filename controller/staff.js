@@ -56,21 +56,38 @@ exports.loginStaff = async (req, res) => {
   try {
     const { email, password } = req.body;
     let staffverify = await STAFF.findOne({ email }).populate("role").populate("teams").populate("organizations");
-    if (!staffverify) {
-      throw new Error("Invalid Email or password");
+    
+    if (staffverify) {
+      let decryptedPassword = decryptData(staffverify.password);
+      if (String(decryptedPassword) !== password) {
+        throw new Error("Invalid password");
+      }
+      let token = jwt.sign({ id: staffverify._id }, process.env.JWT_SECRET_KEY);
+      return res.status(200).json({
+        status: "Success",
+        message: "Logged in successfully",
+        data: staffverify,
+        token,
+      });
     }
-    let decryptedPassword = decryptData(staffverify.password);
 
-    if (String(decryptedPassword) !== password) {
-      throw new Error("Invalid password");
+    const USER = require("../model/user");
+    let userverify = await USER.findOne({ email });
+    if (userverify) {
+      let decryptedPassword = decryptData(userverify.password);
+      if (String(decryptedPassword) !== password) {
+        throw new Error("Invalid password");
+      }
+      let token = jwt.sign({ id: userverify._id }, process.env.JWT_SECRET_KEY);
+      return res.status(200).json({
+        status: "Success",
+        message: "Logged in successfully",
+        data: userverify,
+        token,
+      });
     }
-    let token = jwt.sign({ id: staffverify._id }, process.env.JWT_SECRET_KEY);
-    return res.status(200).json({
-      status: "Success",
-      message: "Staff logged in successfully",
-      data: staffverify,
-      token,
-    });
+
+    throw new Error("Invalid Email or password");
   } catch (error) {
     return res.status(400).json({
       status: "Fail",
