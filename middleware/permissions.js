@@ -60,6 +60,7 @@ function leadReadScope() {
 }
 
 module.exports = {
+  getRolePermissions,
   authorize,
   leadReadScope,
 };

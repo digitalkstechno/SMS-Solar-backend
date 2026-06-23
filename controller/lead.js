@@ -87,6 +87,7 @@ exports.createLead = async (req, res) => {
 
 exports.fetchAllLeads = async (req, res) => {
   try {
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -159,10 +160,11 @@ exports.fetchAllLeads = async (req, res) => {
     if (req.leadScope === "own" && req.user && req.user._id) {
       query.assignedTo = req.user._id;
     }
+    console.log("Final query:", query);
 
     /* =====================
        DB QUERY
-    ====================== */
+    ===================== */
     const totalLeads = await LEAD.countDocuments(query);
 
     const LeadData = await LEAD.find(query)
@@ -1900,4 +1902,4 @@ exports.getPayments = async (req, res) => {
     console.error(error);
     return res.status(500).json({ status: "Fail", message: error.message });
   }
-};
+};

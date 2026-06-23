@@ -78,23 +78,38 @@ exports.fetchAllUsers = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const search = req.query.search || "";
+    const roleName = req.query.roleName || "";
+    const city = req.query.city || "";
 
-    const query = {
-      $or: [
+    const query = {};
+
+    if (search) {
+      query.$or = [
         { fullName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
-        { status: { $regex: search, $options: "i" } },
-      ],
-    };
+      ];
+    }
+
+    let roleIds = [];
+    if (roleName) {
+      const ROLE = require("../model/role");
+      const roles = await ROLE.find({ roleName: { $regex: roleName, $options: "i" } });
+      roleIds = roles.map(r => r._id.toString());
+      if (roleIds.length > 0) {
+        query.department = { $in: roleIds };
+      }
+    }
+
+    if (city) {
+      query.city = { $regex: city, $options: "i" };
+    }
 
     const totalUsers = await USER.countDocuments(query);
     const usersData = await USER.find(query)
-
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 })
-   
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       status: "Success",
@@ -220,6 +235,73 @@ exports.userDelete = async (req, res) => {
     });
   } catch (error) {
     return res.status(404).json({
+      status: "Fail",
+      message: error.message,
+    });
+  }
+};
+
+exports.fetchSalesExecutives = async (req, res) => {
+  try {
+    const search = req.query.search || "";
+    const city = req.query.city || "";
+
+    const ROLE = require("../model/role");
+    const { getRolePermissions } = require("../middleware/permissions");
+    const perms = getRolePermissions(req.user.role);
+    const canReadAllUsers = perms.setup?.readAll;
+
+    let usersData;
+    if (canReadAllUsers) {
+      const query = {};
+      if (search) {
+        query.$or = [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ];
+      }
+      if (city) {
+        query.city = { $regex: city, $options: "i" };
+      }
+      usersData = await USER.find(query).sort({ createdAt: -1 });
+    } else {
+      const salesRole = await ROLE.findOne({ roleName: { $regex: "Sales Executive", $options: "i" } });
+      
+      if (!salesRole) {
+        return res.status(200).json({
+          status: "Success",
+          message: "No sales executive role found",
+          data: [],
+        });
+      }
+
+      const query = {
+        department: salesRole._id.toString(),
+      };
+
+      if (search) {
+        query.$or = [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      if (city) {
+        query.city = { $regex: city, $options: "i" };
+      }
+
+      usersData = await USER.find(query).sort({ createdAt: -1 });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Users fetched successfully",
+      data: usersData,
+    });
+  } catch (error) {
+    return res.status(500).json({
       status: "Fail",
       message: error.message,
     });
