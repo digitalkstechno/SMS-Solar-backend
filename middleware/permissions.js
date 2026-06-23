@@ -7,23 +7,23 @@ function getRolePermissions(role) {
 
 function authorize(feature, action) {
   return (req, res, next) => {
-    // const user = req.user;
-    // if (!user || !user.role) {
-    //   return res.status(403).json({
-    //     status: "Fail",
-    //     message: "Access denied",
-    //   });
-    // }
+    const user = req.user;
+    if (!user || !user.role) {
+      return res.status(403).json({
+        status: "Fail",
+        message: "Access denied",
+      });
+    }
 
-    // const perms = getRolePermissions(user.role);
-    // const featurePerms = perms[feature];
+    const perms = getRolePermissions(user.role);
+    const featurePerms = perms[feature];
 
-    // if (!featurePerms || !featurePerms[action]) {
-    //   return res.status(403).json({
-    //     status: "Fail",
-    //     message: "Access denied",
-    //   });
-    // }
+    if (!featurePerms || !featurePerms[action]) {
+      return res.status(403).json({
+        status: "Fail",
+        message: "Access denied",
+      });
+    }
 
     next();
   };

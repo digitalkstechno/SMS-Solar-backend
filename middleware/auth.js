@@ -15,6 +15,14 @@ async function authMiddleware(req, res, next) {
     if (!userRecord) {
       const USER = require("../model/user");
       userRecord = await USER.findById(decoded.id);
+      if (userRecord && userRecord.department) {
+        const ROLE = require("../model/role");
+        const role = await ROLE.findById(userRecord.department);
+        if (role) {
+          userRecord = userRecord.toObject();
+          userRecord.role = role;
+        }
+      }
     }
 
     if (!userRecord) {

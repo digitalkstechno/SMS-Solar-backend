@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 exports.createUser = async (req, res) => {
   let profileImage = null;
   try {
-    const { fullName, email, phone, password, department, status } = req.body;
+    const { fullName, email, phone, password, department, status, city } = req.body;
 
     const encryptedPassword = encryptData(password);
 
@@ -23,6 +23,7 @@ exports.createUser = async (req, res) => {
       password: encryptedPassword,
       status: status || "active",
       department: department,
+      city: city,
     };
 
     const UserDetails = await USER.create(userData);

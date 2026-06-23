@@ -32,6 +32,9 @@ let UserSchema = new Schema(
     department: {
       type: String,
     },
+    city: {
+      type: String,
+    },
 
   },
   { timestamps: true },
