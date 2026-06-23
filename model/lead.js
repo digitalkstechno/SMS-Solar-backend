@@ -33,6 +33,10 @@ const LeadSchema = new Schema(
       type: String,
     },
 
+    city: {
+      type: String,
+    },
+
     locationLink: {
       type: String,
     },
@@ -97,6 +101,20 @@ const LeadSchema = new Schema(
         }
       ]
     },
+    quotations: [
+      {
+        date: Date,
+        solarModule: String,
+        inverter: String,
+        options: [String],
+        rows: [
+          {
+            title: String,
+            values: [String]
+          }
+        ]
+      }
+    ],
     isActive: {
       type: Boolean,
       default: true,

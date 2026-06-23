@@ -340,6 +340,30 @@ exports.leadUpdate = async (req, res) => {
       });
     }
 
+    if (updateData.quotations && Array.isArray(updateData.quotations)) {
+      const oldLen = (oldLeads.quotations || []).length;
+      const newLen = updateData.quotations.length;
+      if (newLen > oldLen) {
+        newActivities.push({
+          message: `Quotation Added`,
+          by: req.user ? req.user._id : undefined,
+          date: new Date()
+        });
+      } else if (newLen < oldLen) {
+        newActivities.push({
+          message: `Quotation Deleted`,
+          by: req.user ? req.user._id : undefined,
+          date: new Date()
+        });
+      } else {
+        newActivities.push({
+          message: `Quotation Details Updated`,
+          by: req.user ? req.user._id : undefined,
+          date: new Date()
+        });
+      }
+    }
+
     if (newActivities.length > 0) {
       updateData.activities = [...(oldLeads.activities || []), ...newActivities];
     }
