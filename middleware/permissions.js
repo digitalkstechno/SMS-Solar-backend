@@ -18,6 +18,31 @@ function authorize(feature, action) {
     const perms = getRolePermissions(user.role);
     const featurePerms = perms[feature];
 
+    if (feature === "lead" && action === "update") {
+      if (featurePerms && featurePerms[action]) {
+        return next();
+      }
+
+      if (featurePerms && featurePerms.readOwn) {
+        const LEAD = require("../model/lead");
+        return LEAD.findById(req.params.id)
+          .then((leadData) => {
+            if (!leadData) {
+              return res.status(404).json({ status: "Fail", message: "Lead not found" });
+            }
+            const isAssigned = leadData.assignedTo && String(leadData.assignedTo) === String(user._id);
+            const isCreator = leadData.createdBy && String(leadData.createdBy) === String(user._id);
+            if (isAssigned || isCreator) {
+              return next();
+            }
+            return res.status(403).json({ status: "Fail", message: "Access denied" });
+          })
+          .catch((err) => {
+            return res.status(500).json({ status: "Fail", message: err.message });
+          });
+      }
+    }
+
     if (!featurePerms || !featurePerms[action]) {
       return res.status(403).json({
         status: "Fail",
