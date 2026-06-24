@@ -22,11 +22,18 @@ function authorize(feature, action) {
     const featurePerms = perms[feature];
 
     if (feature === "lead" && action === "update") {
-      if (featurePerms && featurePerms[action]) {
+      // Must have update permission enabled to update leads
+      if (!featurePerms || !featurePerms.update) {
+        return res.status(403).json({ status: "Fail", message: "Access denied" });
+      }
+
+      // If they have update and readAll, they can update any lead
+      if (featurePerms.readAll) {
         return next();
       }
 
-      if (featurePerms && featurePerms.readOwn) {
+      // If they have update and readOwn, they can only update their own leads
+      if (featurePerms.readOwn) {
         const LEAD = require("../model/lead");
         return LEAD.findById(req.params.id)
           .then((leadData) => {
