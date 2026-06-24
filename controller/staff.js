@@ -65,7 +65,7 @@ exports.loginStaff = async (req, res) => {
       if (String(decryptedPassword) !== password) {
         throw new Error("Invalid password");
       }
-      let token = jwt.sign({ id: staffverify._id }, process.env.JWT_SECRET_KEY);
+      let token = jwt.sign({ id: staffverify._id }, process.env.JWT_SECRET_KEY, { expiresIn: "24h" });
       return res.status(200).json({
         status: "Success",
         message: "Logged in successfully",
@@ -84,7 +84,7 @@ exports.loginStaff = async (req, res) => {
       if (String(decryptedPassword) !== password) {
         throw new Error("Invalid password");
       }
-      let token = jwt.sign({ id: userverify._id }, process.env.JWT_SECRET_KEY);
+      let token = jwt.sign({ id: userverify._id }, process.env.JWT_SECRET_KEY, { expiresIn: "24h" });
       return res.status(200).json({
         status: "Success",
         message: "Logged in successfully",
