@@ -58,6 +58,9 @@ exports.loginStaff = async (req, res) => {
     let staffverify = await STAFF.findOne({ email }).populate("role").populate("teams").populate("organizations");
     
     if (staffverify) {
+      if (staffverify.status !== "active") {
+        throw new Error("Your account is inactive. Please contact the administrator.");
+      }
       let decryptedPassword = decryptData(staffverify.password);
       if (String(decryptedPassword) !== password) {
         throw new Error("Invalid password");
@@ -74,6 +77,9 @@ exports.loginStaff = async (req, res) => {
     const USER = require("../model/user");
     let userverify = await USER.findOne({ email });
     if (userverify) {
+      if (userverify.status !== "active") {
+        throw new Error("Your account is inactive. Please contact the administrator.");
+      }
       let decryptedPassword = decryptData(userverify.password);
       if (String(decryptedPassword) !== password) {
         throw new Error("Invalid password");

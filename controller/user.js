@@ -51,6 +51,9 @@ exports.loginUser = async (req, res) => {
     if (!userverify) {
       throw new Error("Invalid Email or password");
     }
+    if (userverify.status !== "active") {
+      throw new Error("Your account is inactive. Please contact the administrator.");
+    }
     let decryptedPassword = decryptData(userverify.password);
 
     if (String(decryptedPassword) !== password) {

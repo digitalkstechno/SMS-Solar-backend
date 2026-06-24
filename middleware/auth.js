@@ -28,6 +28,10 @@ async function authMiddleware(req, res, next) {
     if (!userRecord) {
       return res.status(401).json({ status: "Fail", message: "Invalid token" });
     }
+
+    if (userRecord.status !== "active") {
+      return res.status(401).json({ status: "Fail", message: "Your account is inactive. Please contact the administrator." });
+    }
     
     req.user = userRecord;
     next();
