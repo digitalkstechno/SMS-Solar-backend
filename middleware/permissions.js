@@ -16,6 +16,9 @@ function authorize(feature, action) {
     }
 
     const perms = getRolePermissions(user.role);
+    if (user.role.roleName && user.role.roleName.toLowerCase() === "admin") {
+      return next();
+    }
     const featurePerms = perms[feature];
 
     if (feature === "lead" && action === "update") {
