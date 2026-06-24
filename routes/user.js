@@ -17,26 +17,26 @@ router.get("/sales-executives", authMiddleware, fetchSalesExecutives);
 router.get(
   "/",
   authMiddleware,
-  authorize("setup", "readAll"),
+  authorize("staff", "readAll"),
   fetchAllUsers,
 );
 router.get(
   "/:id",
   authMiddleware,
-  authorize("setup", "readAll"),
+  authorize("staff", "readAll"),
   fetchUserById,
 );
 router.put(
   "/:id",
   upload.single("profileImage"),
   authMiddleware,
-  authorize("setup", "update"),
+  authorize("staff", "update"),
   userUpdate,
 );
 router.delete(
   "/:id",
   authMiddleware,
-  authorize("setup", "delete"),
+  authorize("staff", "delete"),
   userDelete,
 );
 module.exports = router;

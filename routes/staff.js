@@ -20,26 +20,26 @@ router.get("/me", authMiddleware, getCurrentStaff);
 router.get(
   "/",
   authMiddleware,
-  authorize("setup", "readAll"),
+  authorize("staff", "readAll"),
   fetchAllStaffs,
 );
 router.get(
   "/:id",
   authMiddleware,
-  authorize("setup", "readAll"),
+  authorize("staff", "readAll"),
   fetchStaffById,
 );
 router.put(
   "/:id",
   upload.single("profileImage"),
   authMiddleware,
-  authorize("setup", "update"),
+  authorize("staff", "update"),
   staffUpdate,
 );
 router.delete(
   "/:id",
   authMiddleware,
-  authorize("setup", "delete"),
+  authorize("staff", "delete"),
   staffDelete,
 );
 module.exports = router;
