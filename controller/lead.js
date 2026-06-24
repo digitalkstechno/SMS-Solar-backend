@@ -21,6 +21,12 @@ exports.createLead = async (req, res) => {
     // Sanitize ObjectIds
     leadData.leadStatus = sanitizeObjectId(leadData.leadStatus);
     leadData.assignedTo = sanitizeObjectId(leadData.assignedTo);
+    if (req.user && req.user._id) {
+      leadData.createdBy = req.user._id;
+    }
+    console.log("=== CREATE LEAD DEBUG ===");
+    console.log("Current Logged-in User:", req.user ? req.user._id : "N/A");
+    console.log("Setting createdBy to:", leadData.createdBy);
 
 
     if (req.files && req.files.length > 0) {
@@ -96,18 +102,21 @@ exports.fetchAllLeads = async (req, res) => {
 
     // 🔥 BASE QUERY
     const query = {};
+    const andConditions = [];
 
     /* =====================
        SEARCH (TEXT)
     ====================== */
     if (search) {
-      query.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-        { discomName: { $regex: search, $options: "i" } },
-      ];
+      andConditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+          { discomName: { $regex: search, $options: "i" } },
+        ]
+      });
     }
 
     /* =====================
@@ -158,9 +167,21 @@ exports.fetchAllLeads = async (req, res) => {
     }
 
     if (req.leadScope === "own" && req.user && req.user._id) {
-      query.assignedTo = req.user._id;
+      andConditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
-    console.log("Final query:", query);
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+    console.log("=== FETCH LEADS DEBUG ===");
+    console.log("leadScope:", req.leadScope);
+    console.log("user:", req.user ? req.user._id : "N/A");
+    console.log("Final query:", JSON.stringify(query));
 
     /* =====================
        DB QUERY
@@ -213,9 +234,10 @@ exports.fetchLeadById = async (req, res) => {
     if (
       req.leadScope === "own" &&
       req.user &&
-      leadData.assignedTo &&
-      leadData.assignedTo._id &&
-      String(leadData.assignedTo._id) !== String(req.user._id)
+      (
+        (!leadData.assignedTo || !leadData.assignedTo._id || String(leadData.assignedTo._id) !== String(req.user._id)) &&
+        (!leadData.createdBy || String(leadData.createdBy) !== String(req.user._id))
+      )
     ) {
       return res.status(403).json({
         status: "Fail",
@@ -459,20 +481,32 @@ exports.fetchLeadsForKanban = async (req, res) => {
     const { search, status, staff, date } = req.query;
 
     const match = {};
+    const conditions = [];
     const myOnly = req.query.my === 'true';
     if ((req.leadScope === "own" || myOnly) && req.user && req.user._id) {
-      match.assignedTo = req.user._id;
+      conditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
 
     // 🔥 SEARCH FILTER
     if (search) {
-      match.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-        { discomName: { $regex: search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+          { discomName: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (conditions.length > 0) {
+      match.$and = conditions;
     }
 
     // 🔥 STATUS FILTER (handle comma-separated values)
@@ -550,19 +584,31 @@ exports.fetchKanbanLeadsByStatus = async (req, res) => {
   try {
     const { statusId, search, staff, date, page = 1, limit = 10 } = req.query;
     const match = { leadStatus: statusId };
+    const conditions = [];
     const myOnly = req.query.my === 'true';
 
     if ((req.leadScope === "own" || myOnly) && req.user && req.user._id) {
-      match.assignedTo = req.user._id;
+      conditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
 
     if (search) {
-      match.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (conditions.length > 0) {
+      match.$and = conditions;
     }
 
 
@@ -660,20 +706,32 @@ exports.getKanbanCounts = async (req, res) => {
     const { search, status, staff, date } = req.query;
 
     const match = {};
+    const conditions = [];
     const myOnly = req.query.my === 'true';
     if ((req.leadScope === "own" || myOnly) && req.user && req.user._id) {
-      match.assignedTo = req.user._id;
+      conditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
 
     // 🔥 SEARCH FILTER
     if (search) {
-      match.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-        { discomName: { $regex: search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+          { discomName: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (conditions.length > 0) {
+      match.$and = conditions;
     }
 
 
@@ -744,20 +802,32 @@ exports.getLeadCountSummary = async (req, res) => {
     const { search, staff, date, from, to } = req.query;
 
     const baseMatch = {};
+    const conditions = [];
     const myOnly = req.query.my === 'true';
     if ((req.leadScope === "own" || myOnly) && req.user && req.user._id) {
-      baseMatch.assignedTo = req.user._id;
+      conditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
 
     // 🔥 SEARCH FILTER
     if (search) {
-      baseMatch.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-        { discomName: { $regex: search, $options: "i" } },
-      ];
+      conditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+          { discomName: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (conditions.length > 0) {
+      baseMatch.$and = conditions;
     }
 
 
@@ -895,7 +965,10 @@ exports.getUpcomingFollowups = async (req, res) => {
     };
 
     if (req.leadScope === "own" && req.user && req.user._id) {
-      matchStage.assignedTo = req.user._id;
+      matchStage.$or = [
+        { assignedTo: req.user._id },
+        { createdBy: req.user._id }
+      ];
     }
 
     const basePipeline = [
@@ -1014,7 +1087,10 @@ exports.getDueFollowups = async (req, res) => {
     };
 
     if (req.leadScope === "own" && req.user && req.user._id) {
-      matchStage.assignedTo = req.user._id;
+      matchStage.$or = [
+        { assignedTo: req.user._id },
+        { createdBy: req.user._id }
+      ];
     }
 
     const basePipeline = [
@@ -1149,20 +1225,32 @@ exports.getWonLeads = async (req, res) => {
     const query = {
       leadStatus: wonStatus._id,
     };
+    const andConditions = [];
 
     if (req.leadScope === "own" && req.user && req.user._id) {
-      query.assignedTo = req.user;
+      andConditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
 
     // 🔥 SEARCH FILTER
     if (search) {
-      query.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-        { discomName: { $regex: search, $options: "i" } },
-      ];
+      andConditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+          { discomName: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
 
@@ -1244,20 +1332,32 @@ exports.getLostLeads = async (req, res) => {
       leadStatus: lostStatus._id,
       isActive: true
     };
+    const andConditions = [];
 
     if (req.leadScope === "own" && req.user && req.user._id) {
-      query.assignedTo = req.user._id;
+      andConditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
     }
 
     // 🔥 SEARCH FILTER
     if (search) {
-      query.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-        { discomName: { $regex: search, $options: "i" } },
-      ];
+      andConditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+          { discomName: { $regex: search, $options: "i" } },
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
 
@@ -1348,15 +1448,18 @@ exports.exportLeadsToExcel = async (req, res) => {
     const { search = "", status, staff, from, to, date } = req.query;
 
     const query = {};
+    const andConditions = [];
 
     // SEARCH
     if (search) {
-      query.$or = [
-        { fullName: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { kwRequirement: { $regex: search, $options: "i" } },
-      ];
+      andConditions.push({
+        $or: [
+          { fullName: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+          { kwRequirement: { $regex: search, $options: "i" } },
+        ]
+      });
     }
 
     // STATUS
@@ -1389,7 +1492,16 @@ exports.exportLeadsToExcel = async (req, res) => {
 
     // OWN SCOPE
     if (req.leadScope === "own" && req.user && req.user._id) {
-      query.assignedTo = req.user._id;
+      andConditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
     }
 
     const leads = await LEAD.find(query)
@@ -1726,6 +1838,9 @@ exports.bulkImportLeads = async (req, res) => {
     const insertErrors = [];
     for (const leadData of successRows) {
       try {
+        if (req.user && req.user._id) {
+          leadData.createdBy = req.user._id;
+        }
         const lead = await LEAD.create(leadData);
         await incrementCount({ statusId: lead.leadStatus });
         imported++;
@@ -1903,3 +2018,31 @@ exports.getPayments = async (req, res) => {
     return res.status(500).json({ status: "Fail", message: error.message });
   }
 };
+
+// Migration to populate createdBy for existing leads
+const migrateExistingLeads = async () => {
+  try {
+    const leads = await LEAD.find({ createdBy: { $exists: false } });
+    if (leads.length > 0) {
+      console.log(`[Migration] Found ${leads.length} leads without createdBy. Migrating...`);
+      for (const lead of leads) {
+        // Find the creator in activities
+        const creationActivity = lead.activities?.find((a) => a.message === "New Lead Created" || a.message?.toLowerCase().includes("created"));
+        if (creationActivity && creationActivity.by) {
+          lead.createdBy = creationActivity.by;
+          await lead.save();
+        } else {
+          // Fallback to assignedTo if no creation activity exists
+          if (lead.assignedTo) {
+            lead.createdBy = lead.assignedTo;
+            await lead.save();
+          }
+        }
+      }
+      console.log("[Migration] Leads migration completed.");
+    }
+  } catch (err) {
+    console.error("[Migration] Error migrating leads:", err);
+  }
+};
+setTimeout(migrateExistingLeads, 5000); // Run 5 seconds after startup
