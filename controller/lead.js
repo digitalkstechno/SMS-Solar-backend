@@ -478,7 +478,7 @@ exports.leadDelete = async (req, res) => {
 
 exports.fetchLeadsForKanban = async (req, res) => {
   try {
-    const { search, status, staff, date } = req.query;
+    const { search, status, staff, date, from, to } = req.query;
 
     const match = {};
     const conditions = [];
@@ -531,8 +531,14 @@ exports.fetchLeadsForKanban = async (req, res) => {
       }
     }
 
-    // 🔥 DATE FILTER
-    if (date) {
+    // 🔥 DATE RANGE FILTER
+    if (from || to) {
+      const start = from ? new Date(from) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = to ? new Date(to) : new Date();
+      end.setHours(23, 59, 59, 999);
+      match.createdAt = { $gte: start, $lte: end };
+    } else if (date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
@@ -582,7 +588,7 @@ exports.fetchLeadsForKanban = async (req, res) => {
 
 exports.fetchKanbanLeadsByStatus = async (req, res) => {
   try {
-    const { statusId, search, staff, date, page = 1, limit = 10 } = req.query;
+    const { statusId, search, staff, date, from, to, page = 1, limit = 10 } = req.query;
     const match = { leadStatus: statusId };
     const conditions = [];
     const myOnly = req.query.my === 'true';
@@ -619,7 +625,13 @@ exports.fetchKanbanLeadsByStatus = async (req, res) => {
       else if (staffArr.length > 1) match.assignedTo = { $in: staffArr };
     }
 
-    if (date) {
+    if (from || to) {
+      const start = from ? new Date(from) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = to ? new Date(to) : new Date();
+      end.setHours(23, 59, 59, 999);
+      match.createdAt = { $gte: start, $lte: end };
+    } else if (date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
@@ -703,7 +715,7 @@ exports.updateKanbanStatus = async (req, res) => {
 
 exports.getKanbanCounts = async (req, res) => {
   try {
-    const { search, status, staff, date } = req.query;
+    const { search, status, staff, date, from, to } = req.query;
 
     const match = {};
     const conditions = [];
@@ -746,8 +758,14 @@ exports.getKanbanCounts = async (req, res) => {
       }
     }
 
-    // 🔥 DATE FILTER
-    if (date) {
+    // 🔥 DATE RANGE FILTER
+    if (from || to) {
+      const start = from ? new Date(from) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = to ? new Date(to) : new Date();
+      end.setHours(23, 59, 59, 999);
+      match.createdAt = { $gte: start, $lte: end };
+    } else if (date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
@@ -1203,7 +1221,7 @@ exports.getWonLeads = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, staff, date } = req.query;
+    const { search, staff, date, from, to } = req.query;
 
     // First find the Won status
     const wonStatus = await LeadStatus.findOne({ name: { $regex: /^won$/i } }); // Case insensitive
@@ -1264,8 +1282,14 @@ exports.getWonLeads = async (req, res) => {
       }
     }
 
-    // 🔥 DATE FILTER
-    if (date) {
+    // 🔥 DATE RANGE FILTER
+    if (from || to) {
+      const start = from ? new Date(from) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = to ? new Date(to) : new Date();
+      end.setHours(23, 59, 59, 999);
+      query.createdAt = { $gte: start, $lte: end };
+    } else if (date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
@@ -1309,7 +1333,7 @@ exports.getLostLeads = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, staff, date } = req.query;
+    const { search, staff, date, from, to } = req.query;
 
     // First find the Lost status
     const lostStatus = await LeadStatus.findOne({ name: { $regex: /^lost$/i } }); // Case insensitive
@@ -1361,13 +1385,24 @@ exports.getLostLeads = async (req, res) => {
     }
 
 
-    // 🔥 STAFF FILTER
+    // 🔥 STAFF FILTER (handle comma-separated values)
     if (staff) {
-      query.assignedTo = staff;
+      const staffArr = staff.split(',').filter(s => s.trim());
+      if (staffArr.length === 1) {
+        query.assignedTo = staffArr[0];
+      } else if (staffArr.length > 1) {
+        query.assignedTo = { $in: staffArr };
+      }
     }
 
-    // 🔥 DATE FILTER
-    if (date) {
+    // 🔥 DATE RANGE FILTER
+    if (from || to) {
+      const start = from ? new Date(from) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = to ? new Date(to) : new Date();
+      end.setHours(23, 59, 59, 999);
+      query.createdAt = { $gte: start, $lte: end };
+    } else if (date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
