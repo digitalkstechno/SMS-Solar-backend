@@ -32,7 +32,7 @@ const ProjectDetailSchema = new Schema(
     discom: { type: String, enum: ["dgvcl", "torrent"] },
     consumerConnectionType: { type: String, enum: ["single", "three"] },
     elcbInstalled: { type: String, enum: ["yes", "no"] },
-    elcbProvideBy: { type: String, enum: ["greeneable", "customer"] },
+    elcbProvideBy: { type: String, enum: ["greeneable", "sms", "customer"] },
     wiringType: { type: String, enum: ["open", "consild"] },
     homeFloor: { type: String },
     walkway: { type: String, enum: ["yes", "no"] },
