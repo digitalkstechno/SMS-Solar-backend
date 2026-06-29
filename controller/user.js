@@ -269,7 +269,7 @@ exports.fetchSalesExecutives = async (req, res) => {
       }
       usersData = await USER.find(query).sort({ createdAt: -1 });
     } else {
-      const salesRole = await ROLE.findOne({ roleName: { $regex: "Sales Executive", $options: "i" } });
+      const salesRole = await ROLE.findOne({ roleName: { $regex: "Sales", $options: "i" } });
       
       if (!salesRole) {
         return res.status(200).json({
