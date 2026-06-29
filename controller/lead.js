@@ -1567,6 +1567,8 @@ exports.exportLeadsToExcel = async (req, res) => {
       { header: "Assigned To", key: "assigned", width: 20 },
       { header: "Priority", key: "priority", width: 12 },
       { header: "Created At", key: "createdAt", width: 18 },
+      { header: "Quotation Sent", key: "quotationSent", width: 16 },
+      { header: "Visit Done", key: "visitDone", width: 16 },
     ];
 
     // Style header row
@@ -1602,6 +1604,8 @@ exports.exportLeadsToExcel = async (req, res) => {
         createdAt: lead.createdAt
           ? new Date(lead.createdAt).toLocaleDateString("en-IN")
           : "",
+        quotationSent: lead.quotation ? "YES" : "NO",
+        visitDone: lead.isVisitDone ? "YES" : "NO",
       });
 
       // Alternate row shading
