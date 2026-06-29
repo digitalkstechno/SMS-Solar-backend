@@ -249,54 +249,20 @@ exports.fetchSalesExecutives = async (req, res) => {
     const search = req.query.search || "";
     const city = req.query.city || "";
 
-    const ROLE = require("../model/role");
-    const { getRolePermissions } = require("../middleware/permissions");
-    const perms = getRolePermissions(req.user.role);
-    const canReadAllUsers = perms.setup?.readAll;
-
-    let usersData;
-    if (canReadAllUsers) {
-      const query = {};
-      if (search) {
-        query.$or = [
-          { fullName: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-          { phone: { $regex: search, $options: "i" } },
-        ];
-      }
-      if (city) {
-        query.city = { $regex: city, $options: "i" };
-      }
-      usersData = await USER.find(query).sort({ createdAt: -1 });
-    } else {
-      const salesRole = await ROLE.findOne({ roleName: { $regex: "Sales", $options: "i" } });
-      
-      if (!salesRole) {
-        return res.status(200).json({
-          status: "Success",
-          message: "No sales executive role found",
-          data: [],
-        });
-      }
-
-      const query = {
-        department: salesRole._id.toString(),
-      };
-
-      if (search) {
-        query.$or = [
-          { fullName: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-          { phone: { $regex: search, $options: "i" } },
-        ];
-      }
-
-      if (city) {
-        query.city = { $regex: city, $options: "i" };
-      }
-
-      usersData = await USER.find(query).sort({ createdAt: -1 });
+    const query = {};
+    if (search) {
+      query.$or = [
+        { fullName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
     }
+
+    if (city) {
+      query.city = { $regex: city, $options: "i" };
+    }
+
+    const usersData = await USER.find(query).sort({ createdAt: -1 });
 
     return res.status(200).json({
       status: "Success",
