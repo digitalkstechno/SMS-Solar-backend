@@ -20,5 +20,6 @@ router.use("/product", require("./product"));
 router.use("/stock", require("./stockTransaction"));
 router.use("/users", require("./user"));
 router.use("/project-detail", require("./projectDetail"));
+router.use("/analytics", require("./analytics"));
 
 module.exports = router;
