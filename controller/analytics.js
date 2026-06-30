@@ -5,20 +5,39 @@ const moment = require("moment");
 exports.getKwGrowth = async (req, res) => {
   try {
     const { timeframe } = req.query; // 'month', 'week', 'year'
-    let formatString = "%Y-%m"; // Default to month
-    let sortObj = { _id: 1 };
-
-    if (timeframe === "year") {
-      formatString = "%Y";
-    } else if (timeframe === "week") {
-      formatString = "%Y-%V";
-    } else if (timeframe === "day") {
-      formatString = "%Y-%m-%d";
-    }
 
     const matchStage = {
       isActive: { $ne: false },
     };
+
+    let startDate = moment();
+    let formatString = "%Y-%m";
+    let dateLabels = [];
+
+    if (timeframe === "year") {
+      startDate = moment().startOf('year');
+      formatString = "%Y-%m";
+      for (let i = 0; i < 12; i++) {
+        dateLabels.push({ key: moment().month(i).format('YYYY-MM'), label: moment().month(i).format('MMM') });
+      }
+    } else if (timeframe === "week") {
+      startDate = moment().startOf('isoWeek');
+      formatString = "%Y-%m-%d";
+      for (let i = 0; i < 7; i++) {
+        const d = moment().startOf('isoWeek').add(i, 'days');
+        dateLabels.push({ key: d.format('YYYY-MM-DD'), label: d.format('ddd') });
+      }
+    } else { // default month
+      startDate = moment().startOf('month');
+      formatString = "%Y-%m-%d";
+      const daysInMonth = moment().daysInMonth();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const d = moment().date(i);
+        dateLabels.push({ key: d.format('YYYY-MM-DD'), label: d.format('DD MMM') });
+      }
+    }
+
+    matchStage.createdAt = { $gte: startDate.toDate() };
 
     if (req.leadScope === "own" && req.user && req.user._id) {
       matchStage.$or = [
@@ -48,9 +67,16 @@ exports.getKwGrowth = async (req, res) => {
           },
           totalKw: { $sum: "$numericKw" }
         }
-      },
-      { $sort: sortObj }
+      }
     ]);
+
+    const finalChartData = dateLabels.map(l => {
+      const found = growthData.find(g => g._id === l.key);
+      return {
+        date: l.label,
+        kw: found ? found.totalKw : 0
+      };
+    });
 
     // Format the response to return total and graph data
     const totalKwSum = growthData.reduce((acc, curr) => acc + curr.totalKw, 0);
@@ -59,10 +85,7 @@ exports.getKwGrowth = async (req, res) => {
       status: "Success",
       data: {
         total: totalKwSum,
-        chartData: growthData.map(item => ({
-          date: item._id,
-          kw: item.totalKw
-        }))
+        chartData: finalChartData
       }
     });
 
