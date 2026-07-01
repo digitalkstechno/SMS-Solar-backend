@@ -3,6 +3,16 @@ const LEADSOURCES = require("../model/leadSources");
 exports.createLeadSources = async (req, res) => {
   try {
     let leadSourceCreate = req.body;
+    
+    // Check for duplicates
+    const existing = await LEADSOURCES.findOne({ name: { $regex: new RegExp(`^${leadSourceCreate.name}$`, 'i') } });
+    if (existing) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "A lead source with this name already exists",
+      });
+    }
+
     let newLeadSource = await LEADSOURCES.create(leadSourceCreate);
     res.status(201).json({
       status: "Success",
@@ -96,6 +106,17 @@ exports.LeadSourceUpdate = async (req, res) => {
     if (!oldLeadSource) {
       throw new Error("Lead Source not found");
     }
+
+    if (req.body.name && req.body.name.toLowerCase() !== oldLeadSource.name.toLowerCase()) {
+      const existing = await LEADSOURCES.findOne({ name: { $regex: new RegExp(`^${req.body.name}$`, 'i') } });
+      if (existing) {
+        return res.status(400).json({
+          status: "Fail",
+          message: "A lead source with this name already exists",
+        });
+      }
+    }
+
     let updatedSources = await LEADSOURCES.findByIdAndUpdate(sourceId, req.body, {
       new: true,
     });
