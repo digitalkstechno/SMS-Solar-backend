@@ -3,6 +3,26 @@ const LEADSTATUS = require("../model/leadStatus");
 exports.createLeadStatus = async (req, res) => {
   try {
     let leadStatusCreate = req.body;
+    
+    // Check for duplicates
+    const existingName = await LEADSTATUS.findOne({ name: { $regex: new RegExp(`^${leadStatusCreate.name}$`, 'i') } });
+    if (existingName) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "A lead status with this name already exists",
+      });
+    }
+
+    if (leadStatusCreate.order !== undefined) {
+      const existingOrder = await LEADSTATUS.findOne({ order: leadStatusCreate.order });
+      if (existingOrder) {
+        return res.status(400).json({
+          status: "Fail",
+          message: "A lead status with this order already exists",
+        });
+      }
+    }
+
     let newLeadStatus = await LEADSTATUS.create(leadStatusCreate);
     res.status(201).json({
       status: "Success",
@@ -95,6 +115,27 @@ exports.LeadStatusUpdate = async (req, res) => {
     if (!oldLeadStatus) {
       throw new Error("Lead Status not found");
     }
+
+    if (req.body.name && req.body.name.toLowerCase() !== oldLeadStatus.name.toLowerCase()) {
+      const existing = await LEADSTATUS.findOne({ name: { $regex: new RegExp(`^${req.body.name}$`, 'i') } });
+      if (existing) {
+        return res.status(400).json({
+          status: "Fail",
+          message: "A lead status with this name already exists",
+        });
+      }
+    }
+
+    if (req.body.order !== undefined && req.body.order !== oldLeadStatus.order) {
+      const existingOrder = await LEADSTATUS.findOne({ order: req.body.order });
+      if (existingOrder) {
+        return res.status(400).json({
+          status: "Fail",
+          message: "A lead status with this order already exists",
+        });
+      }
+    }
+
     let updatedStatus = await LEADSTATUS.findByIdAndUpdate(StatusId, req.body, {
       new: true,
     });
