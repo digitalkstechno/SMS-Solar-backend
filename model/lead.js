@@ -165,5 +165,21 @@ const LeadSchema = new Schema(
   },
 );
 
+// Create indexes for performance
+LeadSchema.index({ leadStatus: 1, createdAt: -1 });
+LeadSchema.index({ assignedTo: 1, createdAt: -1 });
+LeadSchema.index({ createdBy: 1, createdAt: -1 });
+LeadSchema.index({ isActive: 1, createdAt: -1 });
+LeadSchema.index({ nextFollowupDate: 1, nextFollowupTime: 1 });
+
+// Text index for search fields
+LeadSchema.index({ 
+  fullName: 'text', 
+  email: 'text', 
+  contact: 'text', 
+  kwRequirement: 'text', 
+  discomName: 'text' 
+});
+
 const LEAD = mongoose.model("Lead", LeadSchema);
 module.exports = LEAD;
