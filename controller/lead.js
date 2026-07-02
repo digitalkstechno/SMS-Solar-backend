@@ -2050,6 +2050,66 @@ exports.getPayments = async (req, res) => {
   }
 };
 
+exports.deleteQuotation = async (req, res) => {
+  try {
+    const { leadId, quotationId } = req.params;
+
+    const lead = await LEAD.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({ status: "Fail", message: "Lead not found" });
+    }
+
+   
+    const initialLength = lead.quotations.length;
+    lead.quotations = lead.quotations.filter(q => q._id.toString() !== quotationId);
+
+    if (lead.quotations.length === initialLength) {
+       return res.status(404).json({ status: "Fail", message: "Quotation not found" });
+    }
+
+    await lead.save();
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Quotation deleted successfully",
+      data: lead
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message,
+    });
+  }
+};
+
+exports.getQuotation = async (req, res) => {
+  try {
+    const { leadId, quotationId } = req.params;
+
+    const lead = await LEAD.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({ status: "Fail", message: "Lead not found" });
+    }
+
+    const quotation = lead.quotations.find(q => q._id.toString() === quotationId);
+    
+    if (!quotation) {
+      return res.status(404).json({ status: "Fail", message: "Quotation not found" });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Quotation fetched successfully",
+      data: quotation
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message,
+    });
+  }
+};
+
 // Migration to populate createdBy for existing leads
 const migrateExistingLeads = async () => {
   try {
