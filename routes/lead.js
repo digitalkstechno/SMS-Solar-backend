@@ -31,6 +31,8 @@ let {
   bulkImportLeads,
   addPayment,
   getPayments,
+  deleteQuotation,
+  getQuotation
 } = require("../controller/lead");
 const authMiddleware = require("../middleware/auth");
 const { authorize, leadReadScope } = require("../middleware/permissions");
@@ -101,6 +103,10 @@ router.delete(
   leadDelete,
 );
 router.delete('/:leadId/attachments/:attachmentId', authMiddleware, authorize("lead", "delete"), deleteAttachment);
+
+// Quotation routes
+router.delete('/:leadId/quotation/:quotationId', authMiddleware, authorize("lead", "delete"), deleteQuotation);
+router.get('/:leadId/quotation/:quotationId', authMiddleware, leadReadScope(), getQuotation);
 
 // Payment routes
 router.get('/:leadId/payments', authMiddleware, leadReadScope(), getPayments);
