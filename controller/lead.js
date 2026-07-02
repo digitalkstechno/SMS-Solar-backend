@@ -105,17 +105,11 @@ exports.fetchAllLeads = async (req, res) => {
     const andConditions = [];
 
     /* =====================
-       SEARCH (TEXT)
+       SEARCH (TEXT) - using text index for better performance
     ====================== */
     if (search) {
       andConditions.push({
-        $or: [
-          { fullName: { $regex: search, $options: "i" } },
-          { email: { $regex: search, $options: "i" } },
-          { phone: { $regex: search, $options: "i" } },
-          { kwRequirement: { $regex: search, $options: "i" } },
-          { discomName: { $regex: search, $options: "i" } },
-        ]
+        $text: { $search: search }
       });
     }
 
@@ -178,23 +172,21 @@ exports.fetchAllLeads = async (req, res) => {
     if (andConditions.length > 0) {
       query.$and = andConditions;
     }
-    console.log("=== FETCH LEADS DEBUG ===");
-    console.log("leadScope:", req.leadScope);
-    console.log("user:", req.user ? req.user._id : "N/A");
-    console.log("Final query:", JSON.stringify(query));
 
     /* =====================
-       DB QUERY
+       DB QUERY - Optimized with Promise.all
     ===================== */
-    const totalLeads = await LEAD.countDocuments(query);
-
-    const LeadData = await LEAD.find(query)
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .populate("leadStatus")
-      .populate("assignedTo")
-      .populate("followUps.staff", "fullName email");
+    const [totalLeads, LeadData] = await Promise.all([
+      LEAD.countDocuments(query),
+      LEAD.find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .select('-__v') // Exclude version key
+        .populate({ path: 'leadStatus', select: '-__v' })
+        .populate({ path: 'assignedTo', select: '-password -__v' })
+        .populate({ path: 'followUps.staff', select: 'fullName email' })
+    ]);
 
     return res.status(200).json({
       status: "Success",
