@@ -185,6 +185,7 @@ exports.fetchAllLeads = async (req, res) => {
         .select('-__v') // Exclude version key
         .populate({ path: 'leadStatus', select: '-__v' })
         .populate({ path: 'assignedTo', select: '-password -__v' })
+        .populate({ path: 'createdBy', select: '-password -__v' })
         .populate({ path: 'followUps.staff', select: 'fullName email' })
     ]);
 
@@ -218,6 +219,7 @@ exports.fetchLeadById = async (req, res) => {
     let leadData = await LEAD.findById(LeadId)
       .populate({ path: "leadStatus" })
       .populate({ path: "assignedTo" })
+      .populate({ path: "createdBy" })
       .populate({ path: "followUps.staff", select: "fullName email" });
     if (!leadData) {
       throw new Error("Lead not found");
@@ -554,6 +556,7 @@ exports.fetchLeadsForKanban = async (req, res) => {
         const leads = await LEAD.find(leadMatch)
           .populate("leadStatus")
           .populate("assignedTo")
+          .populate("createdBy")
           .sort({ createdAt: -1 })
           .limit(10);
 
@@ -635,6 +638,7 @@ exports.fetchKanbanLeadsByStatus = async (req, res) => {
     const leads = await LEAD.find(match)
       .populate("leadStatus")
       .populate("assignedTo")
+      .populate("createdBy")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
