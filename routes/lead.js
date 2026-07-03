@@ -104,7 +104,7 @@ router.delete(
 );
 router.delete('/:leadId/attachments/:attachmentId', authMiddleware, authorize("lead", "delete"), deleteAttachment);
 
-// Quotation routes
+//   routes
 router.delete('/:leadId/quotation/:quotationId', authMiddleware, authorize("lead", "delete"), deleteQuotation);
 router.get('/:leadId/quotation/:quotationId', authMiddleware, leadReadScope(), getQuotation);
 

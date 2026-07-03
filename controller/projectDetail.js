@@ -101,7 +101,7 @@ exports.upsertProjectDetail = async (req, res) => {
       { lead: leadId },
       { $set: update },
       { new: true, upsert: true, runValidators: true }
-    ).populate("lead", "fullName contact email");
+    ).populate("lead", "fullName contact email quotations");
 
     return res.status(200).json({
       status: "Success",
@@ -120,12 +120,74 @@ exports.getProjectDetail = async (req, res) => {
     const { leadId } = req.params;
     const detail = await ProjectDetail.findOne({ lead: leadId }).populate(
       "lead",
-      "fullName contact email"
+      "fullName contact email quotations"
     );
 
     return res.status(200).json({ status: "Success", data: detail || null });
   } catch (error) {
     console.error("getProjectDetail error:", error);
+    return res.status(500).json({ status: "Error", message: error.message });
+  }
+};
+
+// ── Extract Quotation Values by Lead ID ─────────────────────────────────────
+exports.extractQuotationValues = async (req, res) => {
+  try {
+    const { leadId } = req.params;
+    const { qIdx, optIdx = '0' } = req.query;
+
+    const lead = await Lead.findById(leadId);
+    if (!lead || !lead.quotations || !lead.quotations[qIdx]) {
+      return res.status(404).json({ status: "Error", message: "Quotation not found" });
+    }
+
+    const selectedQ = lead.quotations[qIdx];
+    const optionIndex = parseInt(optIdx, 10);
+
+    const getValByKeywords = (keywords) => {
+      const row = (selectedQ.rows || []).find((r) => {
+        const title = (r.title || '').toUpperCase();
+        return keywords.some(kw => title.includes(kw));
+      });
+      return row?.values?.[optionIndex] || '';
+    };
+
+    const panelMake = getValByKeywords(['SOLAR MODULE MAKE', 'PANEL MAKE', 'MODULE MAKE', 'PANEL BRAND', 'MODULE BRAND', 'MODULE COMPANY']);
+    const panelWp = getValByKeywords(['SYSTEM CAPACITY', 'PANEL WP', 'WATTAGE', 'PANEL CAPACITY']);
+    const noOfPanel = getValByKeywords(['NO OF PANEL', 'NO. OF PANELS', 'PANEL COUNT', 'PANEL QTY', 'PANEL QUANTITY']);
+    const inverterMake = getValByKeywords(['INVERTER MAKE', 'INVERTER BRAND', 'INVERTER COMPANY', 'INVERTER']);
+    const inverterKw = getValByKeywords(['INVERTER KW', 'INVERTER CAPACITY', 'INVERTER SIZE', 'KW']);
+    const discom = getValByKeywords(['DISCOM', 'DISCOM NAME']);
+    const roof = getValByKeywords(['ROOF', 'ROOF TYPE', 'INSTALLATION ROOF']);
+    const connType = getValByKeywords(['CONNECTION', 'CONNECTION TYPE']);
+    const wiringType = getValByKeywords(['WIRING', 'WIRING TYPE']);
+    const homeFloor = getValByKeywords(['FLOOR', 'HOME FLOOR']);
+    const hdgiPipeMake = getValByKeywords(['PIPE MAKE', 'PIPE BRAND', 'HDGI PIPE', 'HDGI']);
+    const projectAmount = getValByKeywords(['CUSTOMER PAYABLE AMOUNT', 'PROJECT AMOUNT', 'TOTAL PRICE', 'PAYABLE AMOUNT', 'AMOUNT']);
+
+    const finalPanelMake = panelMake || selectedQ.solarModule || '';
+    const finalInverterMake = inverterMake || selectedQ.inverter || '';
+
+    return res.status(200).json({
+      status: "Success",
+      data: {
+        panelMake: finalPanelMake,
+        panelWp,
+        noOfPanel,
+        inverterMake: finalInverterMake,
+        inverterKw,
+        discom: discom ? discom.toLowerCase() : undefined,
+        installationRoof: roof ? roof.toLowerCase() : undefined,
+        consumerConnectionType: connType ? connType.toLowerCase() : undefined,
+        wiringType: wiringType ? wiringType.toLowerCase() : undefined,
+        homeFloor,
+        hdgiPipeMake,
+        projectAmount,
+      }
+    });
+
+  } catch (error) {
+    console.error("extractQuotationValues error:", error);
     return res.status(500).json({ status: "Error", message: error.message });
   }
 };
