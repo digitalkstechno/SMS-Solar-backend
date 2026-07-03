@@ -3,7 +3,7 @@ var router = express.Router();
 const createUploader = require("../utils/multer");
 const authMiddleware = require("../middleware/auth");
 const { authorize } = require("../middleware/permissions");
-const { upsertProjectDetail, getProjectDetail } = require("../controller/projectDetail");
+const { upsertProjectDetail, getProjectDetail, extractQuotationValues } = require("../controller/projectDetail");
 
 // Allow multiple named file fields (photos + docs = 16 fields)
 const upload = createUploader("images/ProjectDetail");
@@ -51,5 +51,7 @@ router.post(
 
 // GET /v1/api/project-detail/:leadId  – fetch
 router.get("/:leadId", authMiddleware, getProjectDetail);
+
+router.get("/quotation-extract/:leadId", authMiddleware, extractQuotationValues);
 
 module.exports = router;
