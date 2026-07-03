@@ -101,7 +101,7 @@ exports.upsertProjectDetail = async (req, res) => {
       { lead: leadId },
       { $set: update },
       { new: true, upsert: true, runValidators: true }
-    ).populate("lead", "fullName contact email");
+    ).populate("lead", "fullName contact email quotations");
 
     return res.status(200).json({
       status: "Success",
@@ -120,7 +120,7 @@ exports.getProjectDetail = async (req, res) => {
     const { leadId } = req.params;
     const detail = await ProjectDetail.findOne({ lead: leadId }).populate(
       "lead",
-      "fullName contact email"
+      "fullName contact email quotations"
     );
 
     return res.status(200).json({ status: "Success", data: detail || null });
