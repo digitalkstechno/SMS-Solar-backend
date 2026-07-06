@@ -115,6 +115,23 @@ exports.fetchAllUsers = async (req, res) => {
       .limit(limit)
       .sort({ createdAt: -1 });
 
+    const ROLE = require("../model/role");
+    const roles = await ROLE.find({});
+    const roleMap = {};
+    roles.forEach(role => {
+      roleMap[role._id.toString()] = role.roleName;
+    });
+
+    const populatedUsersData = usersData.map(user => {
+      const userObj = user.toObject();
+      if (userObj.department && roleMap[userObj.department]) {
+        userObj.departmentName = roleMap[userObj.department];
+      } else {
+        userObj.departmentName = null;
+      }
+      return userObj;
+    });
+
     return res.status(200).json({
       status: "Success",
       message: "Users fetched successfully",
@@ -124,7 +141,7 @@ exports.fetchAllUsers = async (req, res) => {
         totalPages: Math.ceil(totalUsers / limit),
         limit,
       },
-      data: usersData,
+      data: populatedUsersData,
     });
   } catch (error) {
     return res.status(500).json({
@@ -141,10 +158,23 @@ exports.fetchUserById = async (req, res) => {
     if (!userData) {
       throw new Error("User not found");
     }
+
+    const ROLE = require("../model/role");
+    let departmentName = null;
+    if (userData.department) {
+      const role = await ROLE.findById(userData.department);
+      if (role) {
+        departmentName = role.roleName;
+      }
+    }
+
+    const userObj = userData.toObject();
+    userObj.departmentName = departmentName;
+
     return res.status(200).json({
       status: "Success",
       message: "User fetched successfully",
-      data: userData,
+      data: userObj,
     });
   } catch (error) {
     return res.status(404).json({
@@ -269,10 +299,27 @@ exports.fetchSalesExecutives = async (req, res) => {
 
     const usersData = await USER.find(query).sort({ createdAt: -1 });
 
+    const ROLE = require("../model/role");
+    const roles = await ROLE.find({});
+    const roleMap = {};
+    roles.forEach(role => {
+      roleMap[role._id.toString()] = role.roleName;
+    });
+
+    const populatedUsersData = usersData.map(user => {
+      const userObj = user.toObject();
+      if (userObj.department && roleMap[userObj.department]) {
+        userObj.departmentName = roleMap[userObj.department];
+      } else {
+        userObj.departmentName = null;
+      }
+      return userObj;
+    });
+
     return res.status(200).json({
       status: "Success",
       message: "Users fetched successfully",
-      data: usersData,
+      data: populatedUsersData,
     });
   } catch (error) {
     return res.status(500).json({
