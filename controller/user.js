@@ -1,4 +1,5 @@
 const USER = require("../model/user");
+const Role = require("../model/role");
 const { encryptData, decryptData } = require("../utils/crypto");
 const { deleteUploadedFile } = require("../utils/fileHelper");
 const { uploadToExternalService, deleteFileFromExternalService } = require("../utils/externalUploader");
@@ -259,7 +260,12 @@ exports.fetchSalesExecutives = async (req, res) => {
     }
 
     if (city) {
-      query.city = { $regex: city, $options: "i" };
+      query.city = { $regex: `^${city}$`, $options: "i" };
+    }
+
+    const salesRole = await Role.findOne({ roleName: { $regex: 'sales', $options: 'i' } });
+    if (salesRole) {
+      query.department = salesRole._id;
     }
 
     const usersData = await USER.find(query).sort({ createdAt: -1 });
