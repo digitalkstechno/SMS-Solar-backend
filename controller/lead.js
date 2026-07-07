@@ -98,7 +98,7 @@ exports.fetchAllLeads = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search = "", status, staff, date, from, to } = req.query;
+    const { search = "", status, staff, date, from, to, source } = req.query;
 
     // 🔥 BASE QUERY
     const query = {};
@@ -108,8 +108,16 @@ exports.fetchAllLeads = async (req, res) => {
        SEARCH (TEXT) - using text index for better performance
     ====================== */
     if (search) {
+      const regex = new RegExp(search, 'i');
       andConditions.push({
-        $text: { $search: search }
+        $or: [
+          { fullName: regex },
+          { email: regex },
+          { contact: regex },
+          { phone: regex },
+          { discomName: regex },
+          { address: regex }
+        ]
       });
     }
 
@@ -136,6 +144,18 @@ exports.fetchAllLeads = async (req, res) => {
         query.assignedTo = staffArr[0];
       } else if (staffArr.length > 1) {
         query.assignedTo = { $in: staffArr };
+      }
+    }
+
+    /* =====================
+       SOURCE FILTER
+    ====================== */
+    if (source) {
+      const sourceArr = source.split(',').map(s => s.trim()).filter(Boolean);
+      if (sourceArr.length === 1) {
+        query.leadrefrance = sourceArr[0];
+      } else if (sourceArr.length > 1) {
+        query.leadrefrance = { $in: sourceArr };
       }
     }
 
@@ -472,7 +492,7 @@ exports.leadDelete = async (req, res) => {
 
 exports.fetchLeadsForKanban = async (req, res) => {
   try {
-    const { search, status, staff, date, from, to } = req.query;
+    const { search, status, staff, date, from, to, source } = req.query;
 
     const match = {};
     const conditions = [];
@@ -522,6 +542,16 @@ exports.fetchLeadsForKanban = async (req, res) => {
         match.assignedTo = staffArr[0];
       } else if (staffArr.length > 1) {
         match.assignedTo = { $in: staffArr };
+      }
+    }
+
+    // 🔥 SOURCE FILTER
+    if (source) {
+      const sourceArr = source.split(',').filter(s => s.trim());
+      if (sourceArr.length === 1) {
+        match.leadrefrance = sourceArr[0];
+      } else if (sourceArr.length > 1) {
+        match.leadrefrance = { $in: sourceArr };
       }
     }
 
@@ -583,7 +613,7 @@ exports.fetchLeadsForKanban = async (req, res) => {
 
 exports.fetchKanbanLeadsByStatus = async (req, res) => {
   try {
-    const { statusId, search, staff, date, from, to, page = 1, limit = 10 } = req.query;
+    const { statusId, search, source, staff, date, from, to, page = 1, limit = 10 } = req.query;
     const match = { leadStatus: statusId };
     const conditions = [];
     const myOnly = req.query.my === 'true';
@@ -618,6 +648,12 @@ exports.fetchKanbanLeadsByStatus = async (req, res) => {
       const staffArr = staff.split(',').filter(s => s.trim());
       if (staffArr.length === 1) match.assignedTo = staffArr[0];
       else if (staffArr.length > 1) match.assignedTo = { $in: staffArr };
+    }
+
+    if (source) {
+      const sourceArr = source.split(',').filter(s => s.trim());
+      if (sourceArr.length === 1) match.leadrefrance = sourceArr[0];
+      else if (sourceArr.length > 1) match.leadrefrance = { $in: sourceArr };
     }
 
     if (from || to) {
@@ -711,7 +747,7 @@ exports.updateKanbanStatus = async (req, res) => {
 
 exports.getKanbanCounts = async (req, res) => {
   try {
-    const { search, status, staff, date, from, to } = req.query;
+    const { search, status, staff, date, from, to, source } = req.query;
 
     const match = {};
     const conditions = [];
@@ -751,6 +787,16 @@ exports.getKanbanCounts = async (req, res) => {
         match.assignedTo = staffArr[0];
       } else if (staffArr.length > 1) {
         match.assignedTo = { $in: staffArr };
+      }
+    }
+
+    // 🔥 SOURCE FILTER
+    if (source) {
+      const sourceArr = source.split(',').filter(s => s.trim());
+      if (sourceArr.length === 1) {
+        match.leadrefrance = sourceArr[0];
+      } else if (sourceArr.length > 1) {
+        match.leadrefrance = { $in: sourceArr };
       }
     }
 
@@ -813,7 +859,7 @@ exports.getLeadCountSummary = async (req, res) => {
 
     const allStatuses = await LeadStatus.find().select("_id name").sort({ order: 1 });
 
-    const { search, staff, date, from, to } = req.query;
+    const { search, staff, date, from, to, source } = req.query;
 
     const baseMatch = {};
     const conditions = [];
@@ -1217,7 +1263,7 @@ exports.getWonLeads = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, staff, date, from, to } = req.query;
+    const { search, staff, date, from, to, source } = req.query;
 
     // First find the Won status
     const wonStatus = await LeadStatus.findOne({ name: { $regex: /^won$/i } }); // Case insensitive
@@ -1278,6 +1324,16 @@ exports.getWonLeads = async (req, res) => {
       }
     }
 
+    // 🔥 SOURCE FILTER
+    if (source) {
+      const sourceArr = source.split(',').filter(s => s.trim());
+      if (sourceArr.length === 1) {
+        query.leadrefrance = sourceArr[0];
+      } else if (sourceArr.length > 1) {
+        query.leadrefrance = { $in: sourceArr };
+      }
+    }
+
     // 🔥 DATE RANGE FILTER
     if (from || to) {
       const start = from ? new Date(from) : new Date(0);
@@ -1329,7 +1385,7 @@ exports.getLostLeads = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const { search, staff, date, from, to } = req.query;
+    const { search, staff, date, from, to, source } = req.query;
 
     // First find the Lost status
     const lostStatus = await LeadStatus.findOne({ name: { $regex: /^lost$/i } }); // Case insensitive
@@ -1388,6 +1444,16 @@ exports.getLostLeads = async (req, res) => {
         query.assignedTo = staffArr[0];
       } else if (staffArr.length > 1) {
         query.assignedTo = { $in: staffArr };
+      }
+    }
+
+    // 🔥 SOURCE FILTER
+    if (source) {
+      const sourceArr = source.split(',').filter(s => s.trim());
+      if (sourceArr.length === 1) {
+        query.leadrefrance = sourceArr[0];
+      } else if (sourceArr.length > 1) {
+        query.leadrefrance = { $in: sourceArr };
       }
     }
 
@@ -1476,7 +1542,7 @@ exports.deleteAttachment = async (req, res) => {
 
 exports.exportLeadsToExcel = async (req, res) => {
   try {
-    const { search = "", status, staff, from, to, date } = req.query;
+    const { search = "", status, staff, from, to, date, source } = req.query;
 
     const query = {};
     const andConditions = [];
