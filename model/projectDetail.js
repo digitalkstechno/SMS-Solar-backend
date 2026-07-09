@@ -66,6 +66,7 @@ const ProjectDetailSchema = new Schema(
     paymentMode: { type: String, enum: ["cash", "cheque"] },
     projectAmount: { type: Number },
     subsidyLessProject: { type: String, enum: ["yes", "no"] },
+    applyForLoan: { type: Boolean, default: false },
 
     // ── Required Documents for Loan ──────────────────────────────────────────
     loanDocQuotation: fileSchema,

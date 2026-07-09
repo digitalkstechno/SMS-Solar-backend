@@ -7,6 +7,11 @@ exports.createCategory = async (req, res) => {
       return res.status(400).json({ message: "Category name is required" });
     }
 
+    const existingCategory = await CATEGORY.findOne({ name: { $regex: new RegExp(`^${name.trim()}$`, "i") } });
+    if (existingCategory) {
+      return res.status(400).json({ message: "Category with this name already exists" });
+    }
+
     const newCategory = await CATEGORY.create({ name });
     res.status(201).json({
       message: "Category created successfully",
@@ -19,7 +24,36 @@ exports.createCategory = async (req, res) => {
 
 exports.getAllCategories = async (req, res) => {
   try {
-    const categories = await CATEGORY.find().sort({ createdAt: -1 });
+    const { page, limit, search } = req.query;
+    let query = {};
+    
+    if (search) {
+      query.name = { $regex: search, $options: 'i' };
+    }
+
+    if (page && limit) {
+      const pageNumber = parseInt(page) || 1;
+      const pageSize = parseInt(limit) || 10;
+      const skip = (pageNumber - 1) * pageSize;
+
+      const [categories, total] = await Promise.all([
+        CATEGORY.find(query).sort({ createdAt: -1 }).skip(skip).limit(pageSize),
+        CATEGORY.countDocuments(query)
+      ]);
+
+      return res.status(200).json({
+        message: "Categories fetched successfully",
+        data: categories,
+        pagination: {
+          totalRecords: total,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(total / pageSize)
+        }
+      });
+    }
+
+    // Fallback to all if no pagination provided
+    const categories = await CATEGORY.find(query).sort({ createdAt: -1 });
     res.status(200).json({
       message: "Categories fetched successfully",
       data: categories,
@@ -52,6 +86,14 @@ exports.updateCategory = async (req, res) => {
     
     if (!name) {
       return res.status(400).json({ message: "Category name is required" });
+    }
+
+    const existingCategory = await CATEGORY.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      _id: { $ne: id }
+    });
+    if (existingCategory) {
+      return res.status(400).json({ message: "Category with this name already exists" });
     }
 
     const category = await CATEGORY.findByIdAndUpdate(

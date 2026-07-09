@@ -32,7 +32,7 @@ exports.upsertProjectDetail = async (req, res) => {
       wiringType, homeFloor, walkway, walkwayLengthFeet,
       ladder, ladderLengthFeet, hdgiPipeMake,
       hdgiPipe80x40, hdgiPipe60x40, hdgiPipe40x40, hdgiPipe20x40PatiPipe,
-      paymentMode, projectAmount, subsidyLessProject,
+      paymentMode, projectAmount, subsidyLessProject, applyForLoan,
     } = req.body;
 
     // Map uploaded files by fieldname
@@ -62,6 +62,7 @@ exports.upsertProjectDetail = async (req, res) => {
       hdgiPipe40x40: hdgiPipe40x40 !== undefined ? Number(hdgiPipe40x40) : undefined,
       hdgiPipe20x40PatiPipe: hdgiPipe20x40PatiPipe !== undefined ? Number(hdgiPipe20x40PatiPipe) : undefined,
       paymentMode, subsidyLessProject,
+      applyForLoan: applyForLoan === 'true' || applyForLoan === true,
       projectAmount: projectAmount ? Number(projectAmount) : undefined,
       createdBy: req.user?._id,
     };
