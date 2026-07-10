@@ -2203,7 +2203,7 @@ exports.getQuotation = async (req, res) => {
   }
 };
 
-// Dashboard Statistics API
+
 exports.getDashboardStats = async (req, res) => {
   try {
     const { from, to, source, staff, status, date, my, revenueYear, kwYear } = req.query;
@@ -2221,7 +2221,7 @@ exports.getDashboardStats = async (req, res) => {
       });
     }
 
-    // Status Filter
+    
     if (status) {
       const statusArr = status.split(',').filter(s => s.trim());
       if (statusArr.length === 1) {
@@ -2231,7 +2231,6 @@ exports.getDashboardStats = async (req, res) => {
       }
     }
 
-    // Staff Filter
     if (staff) {
       const staffArr = staff.split(',').filter(s => s.trim());
       if (staffArr.length === 1) {
@@ -2241,7 +2240,7 @@ exports.getDashboardStats = async (req, res) => {
       }
     }
 
-    // Source Filter
+   
     if (source) {
       const sourceArr = source.split(',').filter(s => s.trim());
       if (sourceArr.length === 1) {
@@ -2251,7 +2250,6 @@ exports.getDashboardStats = async (req, res) => {
       }
     }
 
-    // Date Range Filter
     if (from || to) {
       const start = from ? new Date(from) : new Date(0);
       start.setHours(0, 0, 0, 0);
@@ -2315,7 +2313,6 @@ exports.getDashboardStats = async (req, res) => {
 
       totalRevenue += lead.paymentAmount || 0;
 
-      // Count follow-ups that are upcoming or due
       if (lead.followUps && Array.isArray(lead.followUps)) {
         for (const fu of lead.followUps) {
            if (fu.status === "Pending") {
@@ -2324,7 +2321,6 @@ exports.getDashboardStats = async (req, res) => {
         }
       }
 
-      // Sales Win Rate
       const assignName = lead.assignedTo ? (lead.assignedTo.fullName || "Unassigned") : "Unassigned";
       if (!salesWinRate[assignName]) {
          salesWinRate[assignName] = { name: assignName, won: 0, lost: 0, inProgress: 0, total: 0 };
@@ -2350,13 +2346,11 @@ exports.getDashboardStats = async (req, res) => {
             won: wonLeads,
             lost: lostLeads,
             open: openLeads,
-            followups: followups
-         },
-         totals: {
+            followups: followups,
             revenue: totalRevenue
          },
-         statusWiseCounts: statusWiseCounts,
          charts: {
+            statusWiseCounts: statusWiseCounts,
             salesWinRate: Object.values(salesWinRate).sort((a,b) => b.total - a.total)
          }
       }
@@ -2395,4 +2389,4 @@ const migrateExistingLeads = async () => {
     console.error("[Migration] Error migrating leads:", err);
   }
 };
-setTimeout(migrateExistingLeads, 5000); // Run 5 seconds after startup
+setTimeout(migrateExistingLeads, 5000); 
