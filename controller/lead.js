@@ -2184,7 +2184,6 @@ exports.getQuotation = async (req, res) => {
     if (!lead) {
       return res.status(404).json({ status: "Fail", message: "Lead not found" });
     }
-
     const quotation = lead.quotations.find(q => q._id.toString() === quotationId);
     
     if (!quotation) {
@@ -2200,6 +2199,188 @@ exports.getQuotation = async (req, res) => {
     return res.status(500).json({
       status: "Fail",
       message: error.message,
+    });
+  }
+};
+
+// Dashboard Statistics API
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const { from, to, source, staff, status, date, my, revenueYear, kwYear } = req.query;
+
+    const query = {};
+    const conditions = [];
+
+    const myOnly = my === 'true';
+    if ((req.leadScope === "own" || myOnly) && req.user && req.user._id) {
+      conditions.push({
+        $or: [
+          { assignedTo: req.user._id },
+          { createdBy: req.user._id }
+        ]
+      });
+    }
+
+    // Status Filter
+    if (status) {
+      const statusArr = status.split(',').filter(s => s.trim());
+      if (statusArr.length === 1) {
+        query.leadStatus = statusArr[0];
+      } else if (statusArr.length > 1) {
+        query.leadStatus = { $in: statusArr };
+      }
+    }
+
+    // Staff Filter
+    if (staff) {
+      const staffArr = staff.split(',').filter(s => s.trim());
+      if (staffArr.length === 1) {
+        query.assignedTo = staffArr[0];
+      } else if (staffArr.length > 1) {
+        query.assignedTo = { $in: staffArr };
+      }
+    }
+
+    // Source Filter
+    if (source) {
+      const sourceArr = source.split(',').filter(s => s.trim());
+      if (sourceArr.length === 1) {
+        query.leadrefrance = sourceArr[0];
+      } else if (sourceArr.length > 1) {
+        query.leadrefrance = { $in: sourceArr };
+      }
+    }
+
+    // Date Range Filter
+    if (from || to) {
+      const start = from ? new Date(from) : new Date(0);
+      start.setHours(0, 0, 0, 0);
+      const end = to ? new Date(to) : new Date();
+      end.setHours(23, 59, 59, 999);
+      query.createdAt = { $gte: start, $lte: end };
+    } else if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      query.createdAt = { $gte: start, $lte: end };
+    }
+
+    if (conditions.length > 0) {
+      query.$and = conditions;
+    }
+
+    const leads = await LEAD.find(query)
+      .populate("leadStatus")
+      .populate("assignedTo")
+      .populate("leadrefrance")
+      .lean();
+
+    let totalLeads = leads.length;
+    let newLeads = 0;
+    let wonLeads = 0;
+    let lostLeads = 0;
+    let openLeads = 0;
+    let followups = 0;
+    let totalRevenue = 0;
+    let totalKW = 0;
+
+    let sourceChart = {};
+    let assignmentChart = {};
+    let salesWinRate = {};
+    let statusWiseMap = {};
+    
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const now = new Date();
+
+    for (const lead of leads) {
+      const statusName = lead.leadStatus?.name?.toLowerCase() || "";
+      const statusId = lead.leadStatus?._id?.toString();
+      
+      if (statusId && lead.leadStatus?.name) {
+        if (!statusWiseMap[statusId]) {
+          statusWiseMap[statusId] = { statusId: statusId, statusName: lead.leadStatus.name, count: 0 };
+        }
+        statusWiseMap[statusId].count++;
+      }
+
+      let isWon = statusName === "won" || statusName === "sales won";
+
+      if (isWon) {
+        wonLeads++;
+        totalKW += parseFloat(lead.kwRequirement || 0) || 0;
+      } else if (statusName === "lost") {
+        lostLeads++;
+      } else if (statusName === "new" || statusName === "new lead") {
+        newLeads++;
+      } else {
+        openLeads++;
+      }
+
+      totalRevenue += lead.paymentAmount || 0;
+
+      // Count follow-ups that are upcoming or due
+      if (lead.followUps && Array.isArray(lead.followUps)) {
+        for (const fu of lead.followUps) {
+           if (fu.status === "Pending") {
+             followups++;
+           }
+        }
+      }
+
+      // Source Chart
+      if (lead.leadrefrance) {
+         const sourceName = lead.leadrefrance.name || "Unknown";
+         sourceChart[sourceName] = (sourceChart[sourceName] || 0) + 1;
+      }
+
+      // Assignment Chart
+      const assignName = lead.assignedTo ? (lead.assignedTo.fullName || "Unassigned") : "Unassigned";
+      assignmentChart[assignName] = (assignmentChart[assignName] || 0) + 1;
+
+      // Sales Win Rate
+      if (!salesWinRate[assignName]) {
+         salesWinRate[assignName] = { name: assignName, won: 0, lost: 0, inProgress: 0, total: 0 };
+      }
+      salesWinRate[assignName].total += 1;
+      if (isWon) {
+         salesWinRate[assignName].won += 1;
+      } else if (statusName === "lost") {
+         salesWinRate[assignName].lost += 1;
+      } else {
+         salesWinRate[assignName].inProgress += 1;
+      }
+    }
+    const formatChart = (obj) => Object.keys(obj).map(k => ({ name: k, value: obj[k] }));
+    const statusWiseCounts = Object.values(statusWiseMap);
+
+    return res.status(200).json({
+      status: "Success",
+      data: {
+         counts: {
+            total: totalLeads,
+            new: newLeads,
+            won: wonLeads,
+            lost: lostLeads,
+            open: openLeads,
+            followups: followups
+         },
+         totals: {
+            revenue: totalRevenue,
+            kw: totalKW
+         },
+         statusWiseCounts: statusWiseCounts,
+         charts: {
+            sourceChart: formatChart(sourceChart),
+            assignmentChart: formatChart(assignmentChart),
+            salesWinRate: Object.values(salesWinRate).sort((a,b) => b.total - a.total)
+         }
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message
     });
   }
 };

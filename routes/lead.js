@@ -32,7 +32,8 @@ let {
   addPayment,
   getPayments,
   deleteQuotation,
-  getQuotation
+  getQuotation,
+  getDashboardStats
 } = require("../controller/lead");
 const authMiddleware = require("../middleware/auth");
 const { authorize, leadReadScope } = require("../middleware/permissions");
@@ -40,6 +41,7 @@ const { authorize, leadReadScope } = require("../middleware/permissions");
 router.post("/create", authMiddleware, authorize("lead", "create"), upload.array("attachments"), createLead);
 router.get("/my", authMiddleware, fetchMyLeads);
 router.get("/count-summary/my", authMiddleware, getMyLeadSummary);
+router.get("/dashboard-stats", authMiddleware, leadReadScope(), getDashboardStats);
 router.get("/", authMiddleware, leadReadScope(), fetchAllLeads);
 router.get("/kanban", authMiddleware, leadReadScope(), fetchLeadsForKanban);
 router.get("/kanban-status", authMiddleware, leadReadScope(), fetchKanbanLeadsByStatus);

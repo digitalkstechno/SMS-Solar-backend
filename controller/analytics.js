@@ -4,40 +4,17 @@ const moment = require("moment");
 
 exports.getKwGrowth = async (req, res) => {
   try {
-    const { timeframe } = req.query; // 'month', 'week', 'year'
+    const { year } = req.query;
+    const targetYear = year ? parseInt(year) : new Date().getFullYear();
 
     const matchStage = {
       isActive: { $ne: false },
     };
 
-    let startDate = moment();
-    let formatString = "%Y-%m";
-    let dateLabels = [];
-
-    if (timeframe === "year") {
-      startDate = moment().startOf('year');
-      formatString = "%Y-%m";
-      for (let i = 0; i < 12; i++) {
-        dateLabels.push({ key: moment().month(i).format('YYYY-MM'), label: moment().month(i).format('MMM') });
-      }
-    } else if (timeframe === "week") {
-      startDate = moment().startOf('isoWeek');
-      formatString = "%Y-%m-%d";
-      for (let i = 0; i < 7; i++) {
-        const d = moment().startOf('isoWeek').add(i, 'days');
-        dateLabels.push({ key: d.format('YYYY-MM-DD'), label: d.format('ddd') });
-      }
-    } else { // default month
-      startDate = moment().startOf('month');
-      formatString = "%Y-%m-%d";
-      const daysInMonth = moment().daysInMonth();
-      for (let i = 1; i <= daysInMonth; i++) {
-        const d = moment().date(i);
-        dateLabels.push({ key: d.format('YYYY-MM-DD'), label: d.format('DD MMM') });
-      }
-    }
-
-    matchStage.createdAt = { $gte: startDate.toDate() };
+    matchStage.createdAt = {
+      $gte: new Date(`${targetYear}-01-01T00:00:00.000Z`),
+      $lte: new Date(`${targetYear}-12-31T23:59:59.999Z`)
+    };
 
     if (req.leadScope === "own" && req.user && req.user._id) {
       matchStage.$or = [
@@ -46,45 +23,92 @@ exports.getKwGrowth = async (req, res) => {
       ];
     }
 
-    const growthData = await LEAD.aggregate([
-      { $match: matchStage },
-      {
-        $addFields: {
-          numericKw: {
-            $convert: {
-              input: "$kwRequirement",
-              to: "double",
-              onError: 0,
-              onNull: 0
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            $dateToString: { format: formatString, date: "$createdAt" }
-          },
-          totalKw: { $sum: "$numericKw" }
-        }
+    const growthData = await LEAD.find(matchStage).populate('leadStatus').lean();
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let monthlyKW = Object.fromEntries(months.map(m => [m, 0]));
+    let totalKwSum = 0;
+
+    for (const lead of growthData) {
+      const statusName = lead.leadStatus?.name?.toLowerCase() || "";
+      let isWon = statusName === "won" || statusName === "sales won";
+      if (isWon && lead.createdAt) {
+        const d = new Date(lead.createdAt);
+        const monthLabel = months[d.getMonth()];
+        const kw = parseFloat(lead.kwRequirement || 0) || 0;
+        monthlyKW[monthLabel] += kw;
+        totalKwSum += kw;
       }
-    ]);
+    }
 
-    const finalChartData = dateLabels.map(l => {
-      const found = growthData.find(g => g._id === l.key);
-      return {
-        date: l.label,
-        kw: found ? found.totalKw : 0
-      };
-    });
-
-    // Format the response to return total and graph data
-    const totalKwSum = growthData.reduce((acc, curr) => acc + curr.totalKw, 0);
+    const finalChartData = months.map(m => ({
+      date: m,
+      kw: monthlyKW[m]
+    }));
 
     return res.status(200).json({
       status: "Success",
       data: {
         total: totalKwSum,
+        chartData: finalChartData
+      }
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message,
+    });
+  }
+};
+
+exports.getRevenueGrowth = async (req, res) => {
+  try {
+    const { year } = req.query;
+    const targetYear = year ? parseInt(year) : new Date().getFullYear();
+
+    const matchStage = {
+      isActive: { $ne: false },
+    };
+
+    matchStage.createdAt = {
+      $gte: new Date(`${targetYear}-01-01T00:00:00.000Z`),
+      $lte: new Date(`${targetYear}-12-31T23:59:59.999Z`)
+    };
+
+    if (req.leadScope === "own" && req.user && req.user._id) {
+      matchStage.$or = [
+        { assignedTo: req.user._id },
+        { createdBy: req.user._id }
+      ];
+    }
+
+    const growthData = await LEAD.find(matchStage).lean();
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let monthlyRevenue = Object.fromEntries(months.map(m => [m, 0]));
+    let totalRevenue = 0;
+
+    for (const lead of growthData) {
+      if (lead.createdAt) {
+        const d = new Date(lead.createdAt);
+        const monthLabel = months[d.getMonth()];
+        const amt = parseFloat(lead.paymentAmount || 0) || 0;
+        monthlyRevenue[monthLabel] += amt;
+        totalRevenue += amt;
+      }
+    }
+
+    const finalChartData = months.map(m => ({
+      name: m,
+      amt: monthlyRevenue[m],
+      lineAmt: monthlyRevenue[m] > 0 ? monthlyRevenue[m] * 1.08 : 0
+    }));
+
+    return res.status(200).json({
+      status: "Success",
+      data: {
+        total: totalRevenue,
         chartData: finalChartData
       }
     });
