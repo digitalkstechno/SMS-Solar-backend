@@ -2283,10 +2283,7 @@ exports.getDashboardStats = async (req, res) => {
     let openLeads = 0;
     let followups = 0;
     let totalRevenue = 0;
-    let totalKW = 0;
 
-    let sourceChart = {};
-    let assignmentChart = {};
     let salesWinRate = {};
     let statusWiseMap = {};
     
@@ -2308,7 +2305,6 @@ exports.getDashboardStats = async (req, res) => {
 
       if (isWon) {
         wonLeads++;
-        totalKW += parseFloat(lead.kwRequirement || 0) || 0;
       } else if (statusName === "lost") {
         lostLeads++;
       } else if (statusName === "new" || statusName === "new lead") {
@@ -2328,17 +2324,8 @@ exports.getDashboardStats = async (req, res) => {
         }
       }
 
-      // Source Chart
-      if (lead.leadrefrance) {
-         const sourceName = lead.leadrefrance.name || "Unknown";
-         sourceChart[sourceName] = (sourceChart[sourceName] || 0) + 1;
-      }
-
-      // Assignment Chart
-      const assignName = lead.assignedTo ? (lead.assignedTo.fullName || "Unassigned") : "Unassigned";
-      assignmentChart[assignName] = (assignmentChart[assignName] || 0) + 1;
-
       // Sales Win Rate
+      const assignName = lead.assignedTo ? (lead.assignedTo.fullName || "Unassigned") : "Unassigned";
       if (!salesWinRate[assignName]) {
          salesWinRate[assignName] = { name: assignName, won: 0, lost: 0, inProgress: 0, total: 0 };
       }
@@ -2366,13 +2353,10 @@ exports.getDashboardStats = async (req, res) => {
             followups: followups
          },
          totals: {
-            revenue: totalRevenue,
-            kw: totalKW
+            revenue: totalRevenue
          },
          statusWiseCounts: statusWiseCounts,
          charts: {
-            sourceChart: formatChart(sourceChart),
-            assignmentChart: formatChart(assignmentChart),
             salesWinRate: Object.values(salesWinRate).sort((a,b) => b.total - a.total)
          }
       }
