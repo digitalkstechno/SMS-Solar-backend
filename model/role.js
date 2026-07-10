@@ -107,6 +107,13 @@ let RoleSchema = new Schema(
           update: { type: Boolean, default: false },
           delete: { type: Boolean, default: false },
         },
+        city: {
+          create: { type: Boolean, default: false },
+          readOwn: { type: Boolean, default: false },
+          readAll: { type: Boolean, default: false },
+          update: { type: Boolean, default: false },
+          delete: { type: Boolean, default: false },
+        },
       },
     ],
   },

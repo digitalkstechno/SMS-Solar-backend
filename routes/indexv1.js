@@ -22,5 +22,6 @@ router.use("/users", require("./user"));
 router.use("/project-detail", require("./projectDetail"));
 router.use("/analytics", require("./analytics"));
 router.use("/quotation", require("./quotation"));
+router.use("/city", require("./city"));
 
 module.exports = router;

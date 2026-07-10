@@ -32,9 +32,9 @@ let UserSchema = new Schema(
     department: {
       type: String,
     },
-    city: {
+    city: [{
       type: String,
-    },
+    }],
 
   },
   { timestamps: true },

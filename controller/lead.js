@@ -207,7 +207,20 @@ exports.fetchAllLeads = async (req, res) => {
         .populate({ path: 'assignedTo', select: '-password -__v' })
         .populate({ path: 'createdBy', select: '-password -__v' })
         .populate({ path: 'followUps.staff', select: 'fullName email' })
+        .lean()
     ]);
+
+    const ROLE = require("../model/role");
+    const roles = await ROLE.find().lean();
+    
+    LeadData.forEach(lead => {
+      if (lead.assignedTo && lead.assignedTo.department) {
+        const role = roles.find(r => r._id.toString() === lead.assignedTo.department.toString());
+        if (role) {
+          lead.assignedTo.departmentName = role.roleName || role.name;
+        }
+      }
+    });
 
     return res.status(200).json({
       status: "Success",
@@ -240,9 +253,20 @@ exports.fetchLeadById = async (req, res) => {
       .populate({ path: "leadStatus" })
       .populate({ path: "assignedTo" })
       .populate({ path: "createdBy" })
-      .populate({ path: "followUps.staff", select: "fullName email" });
+      .populate({ path: "followUps.staff", select: "fullName email" })
+      .lean();
     if (!leadData) {
       throw new Error("Lead not found");
+    }
+
+    const ROLE = require("../model/role");
+    const roles = await ROLE.find().lean();
+    
+    if (leadData.assignedTo && leadData.assignedTo.department) {
+      const role = roles.find(r => r._id.toString() === leadData.assignedTo.department.toString());
+      if (role) {
+        leadData.assignedTo.departmentName = role.roleName || role.name;
+      }
     }
 
     if (

@@ -106,7 +106,12 @@ exports.fetchAllUsers = async (req, res) => {
     }
 
     if (city) {
-      query.city = { $regex: city, $options: "i" };
+      const CITY = require("../model/city");
+      const cities = await CITY.find({ cityName: { $regex: city, $options: "i" } });
+      const cityIds = cities.map(c => c._id.toString());
+      if (cityIds.length > 0) {
+        query.city = { $in: cityIds };
+      }
     }
 
     const totalUsers = await USER.countDocuments(query);
@@ -122,6 +127,13 @@ exports.fetchAllUsers = async (req, res) => {
       roleMap[role._id.toString()] = role.roleName;
     });
 
+    const CITY = require("../model/city");
+    const allCities = await CITY.find({});
+    const cityMap = {};
+    allCities.forEach(c => {
+      cityMap[c._id.toString()] = c.cityName;
+    });
+
     const populatedUsersData = usersData.map(user => {
       const userObj = user.toObject();
       if (userObj.department && roleMap[userObj.department]) {
@@ -129,6 +141,20 @@ exports.fetchAllUsers = async (req, res) => {
       } else {
         userObj.departmentName = null;
       }
+
+      if (userObj.city && Array.isArray(userObj.city)) {
+        const uniqueNames = [...new Set(userObj.city.map(cId => {
+          let name = cityMap[cId] || cId;
+          return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+        }))];
+        userObj.cityNames = uniqueNames.join(", ");
+      } else if (userObj.city && typeof userObj.city === 'string') {
+        let name = cityMap[userObj.city] || userObj.city;
+        userObj.cityNames = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+      } else {
+        userObj.cityNames = "-";
+      }
+
       return userObj;
     });
 
@@ -290,7 +316,12 @@ exports.fetchSalesExecutives = async (req, res) => {
     }
 
     if (city) {
-      query.city = { $regex: `^${city}$`, $options: "i" };
+      const CITY = require("../model/city");
+      const cities = await CITY.find({ cityName: { $regex: city, $options: "i" } });
+      const cityIds = cities.map(c => c._id.toString());
+      if (cityIds.length > 0) {
+        query.city = { $in: cityIds };
+      }
     }
 
     const salesRole = await Role.findOne({ roleName: { $regex: 'sales', $options: 'i' } });
@@ -307,6 +338,13 @@ exports.fetchSalesExecutives = async (req, res) => {
       roleMap[role._id.toString()] = role.roleName;
     });
 
+    const CITY = require("../model/city");
+    const allCities = await CITY.find({});
+    const cityMap = {};
+    allCities.forEach(c => {
+      cityMap[c._id.toString()] = c.cityName;
+    });
+
     const populatedUsersData = usersData.map(user => {
       const userObj = user.toObject();
       if (userObj.department && roleMap[userObj.department]) {
@@ -314,6 +352,20 @@ exports.fetchSalesExecutives = async (req, res) => {
       } else {
         userObj.departmentName = null;
       }
+
+      if (userObj.city && Array.isArray(userObj.city)) {
+        const uniqueNames = [...new Set(userObj.city.map(cId => {
+          let name = cityMap[cId] || cId;
+          return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+        }))];
+        userObj.cityNames = uniqueNames.join(", ");
+      } else if (userObj.city && typeof userObj.city === 'string') {
+        let name = cityMap[userObj.city] || userObj.city;
+        userObj.cityNames = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+      } else {
+        userObj.cityNames = "-";
+      }
+
       return userObj;
     });
 
