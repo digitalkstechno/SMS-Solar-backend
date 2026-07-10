@@ -106,11 +106,17 @@ exports.fetchAllUsers = async (req, res) => {
     }
 
     if (city) {
-      const CITY = require("../model/city");
-      const cities = await CITY.find({ cityName: { $regex: city, $options: "i" } });
-      const cityIds = cities.map(c => c._id.toString());
-      if (cityIds.length > 0) {
-        query.city = { $in: cityIds };
+      if (city.match(/^[0-9a-fA-F]{24}$/)) {
+        query.city = city;
+      } else {
+        const CITY = require("../model/city");
+        const cities = await CITY.find({ cityName: { $regex: city, $options: "i" } });
+        const cityIds = cities.map(c => c._id.toString());
+        if (cityIds.length > 0) {
+          query.city = { $in: cityIds };
+        } else {
+          query.city = null; 
+        }
       }
     }
 
@@ -316,11 +322,17 @@ exports.fetchSalesExecutives = async (req, res) => {
     }
 
     if (city) {
-      const CITY = require("../model/city");
-      const cities = await CITY.find({ cityName: { $regex: city, $options: "i" } });
-      const cityIds = cities.map(c => c._id.toString());
-      if (cityIds.length > 0) {
-        query.city = { $in: cityIds };
+      if (city.match(/^[0-9a-fA-F]{24}$/)) {
+        query.city = city;
+      } else {
+        const CITY = require("../model/city");
+        const cities = await CITY.find({ cityName: { $regex: city, $options: "i" } });
+        const cityIds = cities.map(c => c._id.toString());
+        if (cityIds.length > 0) {
+          query.city = { $in: cityIds };
+        } else {
+          query.city = null; // No matches
+        }
       }
     }
 
