@@ -159,6 +159,14 @@ const LeadSchema = new Schema(
         createdAt: { type: Date, default: Date.now }
       }
     ],
+    assignedStock: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'product' },
+        category: { type: mongoose.Schema.Types.ObjectId, ref: 'category' },
+        quantity: { type: Number },
+        date: { type: Date, default: Date.now }
+      }
+    ]
   },
   {
     timestamps: true,

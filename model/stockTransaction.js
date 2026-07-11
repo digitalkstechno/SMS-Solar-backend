@@ -27,6 +27,21 @@ const StockTransactionSchema = new Schema(
       type: String,
       trim: true,
     },
+    leadId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lead",
+      required: false,
+    },
+    issuedTo: {
+      type: String,
+      trim: true,
+      required: false,
+    },
+    unit: {
+      type: String,
+      trim: true,
+      required: false,
+    },
   },
   { timestamps: true }
 );

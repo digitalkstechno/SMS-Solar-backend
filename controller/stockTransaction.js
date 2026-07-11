@@ -4,7 +4,7 @@ const PRODUCT = require("../model/product");
 // Create a stock transaction (IN or OUT)
 exports.createTransaction = async (req, res) => {
   try {
-    const { categoryId, productId, type, quantity, note } = req.body;
+    const { categoryId, productId, type, quantity, note, unit } = req.body;
 
     if (!categoryId || !productId || !type || !quantity) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -34,11 +34,15 @@ exports.createTransaction = async (req, res) => {
       type,
       quantity,
       note,
+      unit: unit || "Qty",
     });
 
-    // Update product stock
+    // Update product stock and unit
     if (type === "IN") {
       product.currentStock += quantity;
+      if (unit) {
+        product.unit = unit;
+      }
     } else {
       product.currentStock -= quantity;
     }
@@ -65,6 +69,7 @@ exports.getAllTransactions = async (req, res) => {
     const transactions = await STOCK_TRANSACTION.find(query)
       .populate("categoryId", "name")
       .populate("productId", "name currentStock")
+      .populate("leadId", "fullName leadrefrance")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -78,8 +83,8 @@ exports.getAllTransactions = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
   try {
+    const { categoryId, productId, quantity, note, unit } = req.body;
     const { id } = req.params;
-    const { categoryId, productId, quantity, note } = req.body;
 
     const oldTransaction = await STOCK_TRANSACTION.findById(id);
     if (!oldTransaction) {
@@ -102,7 +107,7 @@ exports.updateTransaction = async (req, res) => {
       product.currentStock -= difference;
     } else if (oldTransaction.type === "IN") {
       // If updating IN, ensure the new quantity doesn't drop currentStock below 0
-      if (product.currentStock - difference < 0) {
+      if (product.currentStock + difference < 0) {
         return res.status(400).json({ message: "This update would result in negative stock" });
       }
       product.currentStock += difference;
@@ -112,7 +117,14 @@ exports.updateTransaction = async (req, res) => {
     oldTransaction.productId = productId;
     oldTransaction.quantity = quantity;
     oldTransaction.note = note;
+    if (unit) {
+      oldTransaction.unit = unit;
+    }
     
+    if (oldTransaction.type === "IN" && unit) {
+      product.unit = unit;
+    }
+
     await oldTransaction.save();
     await product.save();
 

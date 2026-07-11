@@ -18,6 +18,10 @@ let ProductSchema = new Schema(
       type: Number,
       default: 0,
     },
+    unit: {
+      type: String,
+      default: "Qty",
+    },
   },
   { timestamps: true }
 );

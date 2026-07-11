@@ -33,11 +33,13 @@ let {
   getPayments,
   deleteQuotation,
   getQuotation,
-  getDashboardStats
+  getDashboardStats,
+  assignStock
 } = require("../controller/lead");
 const authMiddleware = require("../middleware/auth");
 const { authorize, leadReadScope } = require("../middleware/permissions");
 
+router.post("/:id/assign-stock", authMiddleware, authorize("lead", "update"), assignStock);
 router.post("/create", authMiddleware, authorize("lead", "create"), upload.array("attachments"), createLead);
 router.get("/my", authMiddleware, fetchMyLeads);
 router.get("/count-summary/my", authMiddleware, getMyLeadSummary);

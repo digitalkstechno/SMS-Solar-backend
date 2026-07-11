@@ -254,6 +254,8 @@ exports.fetchLeadById = async (req, res) => {
       .populate({ path: "assignedTo" })
       .populate({ path: "createdBy" })
       .populate({ path: "followUps.staff", select: "fullName email" })
+      .populate({ path: "assignedStock.product" })
+      .populate({ path: "assignedStock.category" })
       .lean();
     if (!leadData) {
       throw new Error("Lead not found");
@@ -2355,6 +2357,77 @@ exports.getDashboardStats = async (req, res) => {
          }
       }
     });
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message
+    });
+  }
+};
+
+const PRODUCT = require("../model/product");
+const STOCK_TRANSACTION = require("../model/stockTransaction");
+
+exports.assignStock = async (req, res) => {
+  try {
+    const leadId = req.params.id;
+    const { categoryId, productId, quantity, note } = req.body;
+    const userId = req.user._id;
+
+    if (!categoryId || !productId || !quantity || quantity <= 0) {
+      return res.status(400).json({ status: "Fail", message: "Invalid parameters for stock assignment" });
+    }
+
+    const product = await PRODUCT.findById(productId);
+    if (!product) {
+      return res.status(404).json({ status: "Fail", message: "Product not found" });
+    }
+
+    if (product.currentStock < quantity) {
+      return res.status(400).json({ status: "Fail", message: "Insufficient stock" });
+    }
+
+    const lead = await LEAD.findById(leadId);
+    if (!lead) {
+      return res.status(404).json({ status: "Fail", message: "Lead not found" });
+    }
+
+    // Deduct stock
+    product.currentStock -= quantity;
+    await product.save();
+
+    // Create transaction
+    const transaction = new STOCK_TRANSACTION({
+      categoryId,
+      productId,
+      type: "OUT",
+      quantity,
+      note: note || "-",
+      leadId: leadId
+    });
+    await transaction.save();
+
+    // Add to lead
+    lead.assignedStock.push({
+      product: productId,
+      category: categoryId,
+      quantity,
+      date: new Date()
+    });
+    
+    lead.activities.push({
+      message: `Assigned ${quantity} of ${product.name} to this lead`,
+      by: userId
+    });
+
+    await lead.save();
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Stock assigned successfully",
+      data: lead
+    });
+
   } catch (error) {
     return res.status(500).json({
       status: "Fail",
