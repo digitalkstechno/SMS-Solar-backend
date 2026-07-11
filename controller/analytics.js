@@ -41,7 +41,11 @@ exports.getKwGrowth = async (req, res) => {
       }
     }
 
-    const finalChartData = months.map(m => ({
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const displayMonths = targetYear === currentYear ? months.slice(0, currentMonth + 1) : targetYear < currentYear ? months : [];
+
+    const finalChartData = displayMonths.map(m => ({
       date: m,
       kw: monthlyKW[m]
     }));
@@ -99,7 +103,11 @@ exports.getRevenueGrowth = async (req, res) => {
       }
     }
 
-    const finalChartData = months.map(m => ({
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const displayMonths = targetYear === currentYear ? months.slice(0, currentMonth + 1) : targetYear < currentYear ? months : [];
+
+    const finalChartData = displayMonths.map(m => ({
       name: m,
       amt: monthlyRevenue[m],
       lineAmt: monthlyRevenue[m] > 0 ? monthlyRevenue[m] * 1.08 : 0

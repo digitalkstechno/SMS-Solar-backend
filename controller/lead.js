@@ -2276,7 +2276,12 @@ exports.getDashboardStats = async (req, res) => {
       .populate("leadrefrance")
       .lean();
 
-    let totalLeads = leads.length;
+    const allTimeQuery = {};
+    if (conditions.length > 0) {
+      allTimeQuery.$and = conditions;
+    }
+    const totalLeads = await LEAD.countDocuments(allTimeQuery);
+
     let newLeads = 0;
     let wonLeads = 0;
     let lostLeads = 0;
