@@ -120,10 +120,7 @@ exports.updateTransaction = async (req, res) => {
       }
       product.currentStock -= difference;
     } else if (oldTransaction.type === "IN") {
-      // If updating IN, ensure the new quantity doesn't drop currentStock below 0
-      if (product.currentStock + difference < 0) {
-        return res.status(400).json({ message: "This update would result in negative stock" });
-      }
+      // If updating IN, allow currentStock to adjust even if it temporarily goes negative
       product.currentStock += difference;
     }
 
@@ -164,9 +161,6 @@ exports.deleteTransaction = async (req, res) => {
     
     if (product) {
       if (transaction.type === "IN") {
-        if (product.currentStock < transaction.quantity) {
-          return res.status(400).json({ message: "Cannot delete this stock IN as it is already consumed" });
-        }
         product.currentStock -= transaction.quantity;
       } else if (transaction.type === "OUT") {
         product.currentStock += transaction.quantity;
