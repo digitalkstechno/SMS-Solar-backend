@@ -2401,24 +2401,46 @@ exports.assignStock = async (req, res) => {
     product.currentStock -= quantity;
     await product.save();
 
-    // Create transaction
-    const transaction = new STOCK_TRANSACTION({
-      categoryId,
-      productId,
-      type: "OUT",
-      quantity,
-      note: note || "-",
-      leadId: leadId
+    // Create or update transaction
+    let transaction = await STOCK_TRANSACTION.findOne({
+      leadId: leadId,
+      categoryId: categoryId,
+      productId: productId,
+      type: "OUT"
     });
-    await transaction.save();
 
-    // Add to lead
-    lead.assignedStock.push({
-      product: productId,
-      category: categoryId,
-      quantity,
-      date: new Date()
-    });
+    if (transaction) {
+      transaction.quantity += quantity;
+      transaction.note = note || transaction.note;
+      await transaction.save();
+    } else {
+      transaction = new STOCK_TRANSACTION({
+        categoryId,
+        productId,
+        type: "OUT",
+        quantity,
+        note: note || "-",
+        leadId: leadId
+      });
+      await transaction.save();
+    }
+
+    // Add or update in lead
+    const existingIndex = lead.assignedStock.findIndex(
+      (item) => item.product.toString() === productId
+    );
+
+    if (existingIndex !== -1) {
+      lead.assignedStock[existingIndex].quantity += quantity;
+      lead.assignedStock[existingIndex].date = new Date();
+    } else {
+      lead.assignedStock.push({
+        product: productId,
+        category: categoryId,
+        quantity,
+        date: new Date()
+      });
+    }
     
     lead.activities.push({
       message: `Assigned ${quantity} of ${product.name} to this lead`,

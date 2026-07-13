@@ -4,6 +4,7 @@ const stockTransactionController = require("../controller/stockTransaction");
 const authMiddleware = require("../middleware/auth");
 
 router.post("/", authMiddleware, stockTransactionController.createTransaction);
+router.get("/export", stockTransactionController.exportStockInReport);
 router.get("/", authMiddleware, stockTransactionController.getAllTransactions);
 router.patch("/:id", authMiddleware, stockTransactionController.updateTransaction);
 router.delete("/:id", authMiddleware, stockTransactionController.deleteTransaction);
