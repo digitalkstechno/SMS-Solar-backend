@@ -4,6 +4,8 @@ const path = require('path');
 const sharp = require('sharp');
 const axios = require('axios');
 
+const staticImageCache = {};
+
 const generatePdfBuffer = async (quotation) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -13,22 +15,29 @@ const generatePdfBuffer = async (quotation) => {
         autoFirstPage: false 
       });
 
-      const buffers = [];
-      doc.on('data', buffers.push.bind(buffers));
-      doc.on('end', () => {
-        resolve(Buffer.concat(buffers));
-      });
+      if (quotation && quotation.streamTarget) {
+        doc.pipe(quotation.streamTarget);
+        quotation.streamTarget.on('finish', () => resolve());
+      } else {
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+          resolve(Buffer.concat(buffers));
+        });
+      }
       doc.on('error', reject);
 
       const drawStaticPage = async (pageNum) => {
         doc.addPage({ size: 'A4', margin: 0 });
         const imagePath = path.join(__dirname, `../pdfs-png/${pageNum}.jpg`);
         if (fs.existsSync(imagePath)) {
-          const optimizedImageBuffer = await sharp(imagePath)
-            .resize({ width: 1190 }) 
-            .jpeg({ quality: 80, mozjpeg: true }) 
-            .toBuffer();
-          doc.image(optimizedImageBuffer, 0, 0, { width: doc.page.width, height: doc.page.height });
+          if (!staticImageCache[imagePath]) {
+            staticImageCache[imagePath] = await sharp(imagePath)
+              .resize({ width: 1190 }) 
+              .jpeg({ quality: 80, mozjpeg: true }) 
+              .toBuffer();
+          }
+          doc.image(staticImageCache[imagePath], 0, 0, { width: doc.page.width, height: doc.page.height });
         } else {
           doc.text(`Page ${pageNum} image not found`, 50, 50);
         }
@@ -41,11 +50,13 @@ const generatePdfBuffer = async (quotation) => {
       doc.addPage({ size: 'A4', margin: 0 });
       const blankPath = path.join(__dirname, '../pdfs-png/blank.jpg');
       if (fs.existsSync(blankPath)) {
-        const blankJpeg = await sharp(blankPath)
-          .resize({ width: 1190 })
-          .jpeg({ quality: 80, mozjpeg: true })
-          .toBuffer();
-        doc.image(blankJpeg, 0, 0, { width: doc.page.width, height: doc.page.height });
+        if (!staticImageCache[blankPath]) {
+          staticImageCache[blankPath] = await sharp(blankPath)
+            .resize({ width: 1190 })
+            .jpeg({ quality: 80, mozjpeg: true })
+            .toBuffer();
+        }
+        doc.image(staticImageCache[blankPath], 0, 0, { width: doc.page.width, height: doc.page.height });
       }
 
       if (quotation) {
@@ -165,11 +176,12 @@ const generatePdfBuffer = async (quotation) => {
 exports.generateQuotation = async (req, res) => {
   try {
     const { quotation } = req.body;
-    const pdfBuffer = await generatePdfBuffer(quotation);
-    
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=quotation.pdf');
-    res.send(pdfBuffer);
+    
+    // Add stream target to stream directly to response
+    quotation.streamTarget = res;
+    await generatePdfBuffer(quotation);
   } catch (error) {
     console.error('Error generating PDF:', error);
     if (!res.headersSent) {

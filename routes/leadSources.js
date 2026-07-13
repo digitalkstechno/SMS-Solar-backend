@@ -13,31 +13,31 @@ const { authorize } = require("../middleware/permissions");
 router.post(
   "/",
   authMiddleware,
-  // authorize("setup", "create"),
+  authorize("leadSource", "create"),
   createLeadSources,
 );
 router.get(
   "/",
   authMiddleware,
-  // authorize("setup", "readAll"),
+  authorize("leadSource", "readAll"),
   fetchAllLeadSources,
 );
 router.get(
   "/:id",
   authMiddleware,
-  // authorize("setup", "readAll"),
+  authorize("leadSource", "readAll"),
   fetchLeadSourcesById,
 );
 router.put(
   "/:id",
   authMiddleware,
-  // authorize("setup", "update"),
+  authorize("leadSource", "update"),
   LeadSourceUpdate,
 );
 router.delete(
   "/:id",
   authMiddleware,
-  // authorize("setup", "delete"),
+  authorize("leadSource", "delete"),
   LeadSourcesDelete,
 );
 
