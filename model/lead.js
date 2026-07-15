@@ -123,6 +123,10 @@ const LeadSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    isVisitDone: {
+      type: Boolean,
+      default: null,
+    },
     nextFollowupDate: {
       type: Date,
       default: null,

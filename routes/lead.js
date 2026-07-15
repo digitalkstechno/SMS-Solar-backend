@@ -34,7 +34,8 @@ let {
   deleteQuotation,
   getQuotation,
   getDashboardStats,
-  assignStock
+  assignStock,
+  updateVisitStatus
 } = require("../controller/lead");
 const authMiddleware = require("../middleware/auth");
 const { authorize, leadReadScope } = require("../middleware/permissions");
@@ -92,6 +93,12 @@ router.put(
   authMiddleware,
   authorize("lead", "update"),
   updateKanbanStatus,
+);
+router.put(
+  "/:id/visit",
+  authMiddleware,
+  authorize("lead", "update"),
+  updateVisitStatus,
 );
 router.put(
   "/:id",

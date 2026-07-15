@@ -2464,6 +2464,29 @@ exports.assignStock = async (req, res) => {
 };
 
 // Migration to populate createdBy for existing leads
+exports.updateVisitStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isVisitDone } = req.body;
+    const lead = await LEAD.findByIdAndUpdate(
+      id,
+      { isVisitDone },
+      { new: true }
+    );
+    if (!lead) {
+      return res.status(404).json({ success: false, message: "Lead not found" });
+    }
+    return res.status(200).json({
+      success: true,
+      message: "Visit status updated successfully",
+      data: lead,
+    });
+  } catch (error) {
+    console.error("Error updating visit status:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 const migrateExistingLeads = async () => {
   try {
     const leads = await LEAD.find({ createdBy: { $exists: false } });
@@ -2489,4 +2512,25 @@ const migrateExistingLeads = async () => {
     console.error("[Migration] Error migrating leads:", err);
   }
 };
+const migrateLeadVisitStatus = async () => {
+  try {
+    const leadsToUpdate = await LEAD.find({ 
+      'followUps.0': { $exists: true }, 
+      isVisitDone: { $ne: true } 
+    });
+    
+    if (leadsToUpdate.length > 0) {
+      console.log(`[Migration] Found ${leadsToUpdate.length} leads with follow-ups but no visit status. Updating...`);
+      await LEAD.updateMany(
+        { 'followUps.0': { $exists: true }, isVisitDone: { $ne: true } },
+        { $set: { isVisitDone: true } }
+      );
+      console.log("[Migration] Lead visit status migration completed.");
+    }
+  } catch (err) {
+    console.error("[Migration] Error migrating lead visit status:", err);
+  }
+};
+
 setTimeout(migrateExistingLeads, 5000); 
+setTimeout(migrateLeadVisitStatus, 6000); 
