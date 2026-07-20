@@ -213,11 +213,21 @@ exports.fetchAllLeads = async (req, res) => {
     const ROLE = require("../model/role");
     const roles = await ROLE.find().lean();
     
+    const LeadSource = require("../model/leadSources");
+    const leadSources = await LeadSource.find().lean();
+
     LeadData.forEach(lead => {
       if (lead.assignedTo && lead.assignedTo.department) {
         const role = roles.find(r => r._id.toString() === lead.assignedTo.department.toString());
         if (role) {
           lead.assignedTo.departmentName = role.roleName || role.name;
+        }
+      }
+      
+      if (lead.leadrefrance) {
+        const source = leadSources.find(s => s._id.toString() === lead.leadrefrance.toString());
+        if (source) {
+          lead.leadrefranceName = source.name;
         }
       }
     });
@@ -268,6 +278,14 @@ exports.fetchLeadById = async (req, res) => {
       const role = roles.find(r => r._id.toString() === leadData.assignedTo.department.toString());
       if (role) {
         leadData.assignedTo.departmentName = role.roleName || role.name;
+      }
+    }
+
+    if (leadData.leadrefrance) {
+      const LeadSource = require("../model/leadSources");
+      const source = await LeadSource.findById(leadData.leadrefrance).lean();
+      if (source) {
+        leadData.leadrefranceName = source.name;
       }
     }
 
@@ -1630,7 +1648,11 @@ exports.exportLeadsToExcel = async (req, res) => {
     const leads = await LEAD.find(query)
       .sort({ createdAt: -1 })
       .populate("leadStatus", "name")
-      .populate("assignedTo", "fullName email");
+      .populate("assignedTo", "fullName email")
+      .lean();
+
+    const LeadSource = require("../model/leadSources");
+    const leadSources = await LeadSource.find().lean();
 
     // ── Build Excel ───────────────────────────────────────────────────────────
     const workbook = new ExcelJS.Workbook();
@@ -1677,6 +1699,12 @@ exports.exportLeadsToExcel = async (req, res) => {
 
     // Fill data rows
     leads.forEach((lead, idx) => {
+      let sourceName = lead.leadrefrance || "";
+      if (lead.leadrefrance) {
+        const source = leadSources.find(s => s._id.toString() === lead.leadrefrance.toString());
+        if (source) sourceName = source.name;
+      }
+
       const row = sheet.addRow({
         sno: idx + 1,
         fullName: lead.fullName || "",
@@ -1684,7 +1712,7 @@ exports.exportLeadsToExcel = async (req, res) => {
         phone: lead.contact || "",
         kwRequirement: lead.kwRequirement || "",
         discomName: lead.discomName || "",
-        leadrefrance: lead.leadrefrance || "",
+        leadrefrance: sourceName,
         projecttype: lead.projecttype || "",
         status: lead.leadStatus?.name || "",
         assigned: lead.assignedTo?.fullName || "",
