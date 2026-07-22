@@ -2319,6 +2319,8 @@ exports.getDashboardStats = async (req, res) => {
 
     let salesWinRate = {};
     let statusWiseMap = {};
+    let visitsDone = 0;
+    let visitsPending = 0;
     
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
@@ -2344,6 +2346,12 @@ exports.getDashboardStats = async (req, res) => {
         newLeads++;
       } else {
         openLeads++;
+      }
+
+      if (lead.isVisitDone === true) {
+        visitsDone++;
+      } else {
+        visitsPending++;
       }
 
       totalRevenue += lead.paymentAmount || 0;
@@ -2386,7 +2394,11 @@ exports.getDashboardStats = async (req, res) => {
          },
          charts: {
             statusWiseCounts: statusWiseCounts,
-            salesWinRate: Object.values(salesWinRate).sort((a,b) => b.total - a.total)
+            salesWinRate: Object.values(salesWinRate).sort((a,b) => b.total - a.total),
+            visits: [
+              { name: "Done", value: visitsDone },
+              { name: "Pending", value: visitsPending }
+            ]
          }
       }
     });
@@ -2395,6 +2407,117 @@ exports.getDashboardStats = async (req, res) => {
       status: "Fail",
       message: error.message
     });
+  }
+};
+
+exports.getVisitStats = async (req, res) => {
+  try {
+    const { filter } = req.query;
+    const match = req.baseLeadMatch || {};
+
+    let startDate;
+    let endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (filter === "today") {
+      startDate = new Date(today);
+    } else if (filter === "this week") {
+      startDate = new Date(today);
+      const day = startDate.getDay();
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); 
+      startDate.setDate(diff);
+    } else if (filter === "this month") {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    }
+
+    if (startDate) {
+      match.createdAt = { $gte: startDate, $lte: endDate };
+    }
+
+    const leads = await LEAD.find(match).select("isVisitDone");
+
+    let visitsDone = 0;
+    let visitsPending = 0;
+
+    leads.forEach(lead => {
+      if (lead.isVisitDone === true) {
+        visitsDone++;
+      } else {
+        visitsPending++;
+      }
+    });
+
+    return res.status(200).json({
+      status: "Success",
+      data: [
+        { name: "Done", value: visitsDone },
+        { name: "Pending", value: visitsPending }
+      ]
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "Fail", message: error.message });
+  }
+};
+
+exports.getVisitLeads = async (req, res) => {
+  try {
+    const { filter, page = 1, limit = 10 } = req.query;
+    const match = req.baseLeadMatch || {};
+    
+    // Must have a visit date and not be completed
+    match.visitDate = { $exists: true, $ne: null };
+    match.isVisitCompleted = { $ne: true };
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let startDate;
+    let endDate = new Date(today);
+    endDate.setHours(23, 59, 59, 999);
+
+    if (filter === "today") {
+      startDate = new Date(today);
+    } else if (filter === "this week") {
+      startDate = new Date(today);
+      const day = startDate.getDay();
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
+      startDate.setDate(diff);
+      
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+    } else if (filter === "this month") {
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    if (startDate) {
+      match.visitDate = { $gte: startDate, $lte: endDate };
+    }
+
+    const totalCount = await LEAD.countDocuments(match);
+    const leads = await LEAD.find(match)
+      .populate("assignedTo", "fullName")
+      .populate("leadStatus", "name color")
+      .sort({ visitDate: 1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    return res.status(200).json({
+      status: "Success",
+      data: leads,
+      pagination: {
+        totalItems: totalCount,
+        totalPages: Math.ceil(totalCount / limit) || 1,
+        currentPage: Number(page)
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ status: "Fail", message: error.message });
   }
 };
 
@@ -2495,10 +2618,17 @@ exports.assignStock = async (req, res) => {
 exports.updateVisitStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isVisitDone } = req.body;
+    const { isVisitDone, visitDate, isVisitCompleted } = req.body;
+    
+    // Build update object dynamically
+    const updateObj = {};
+    if (isVisitDone !== undefined) updateObj.isVisitDone = isVisitDone;
+    if (isVisitCompleted !== undefined) updateObj.isVisitCompleted = isVisitCompleted;
+    if (visitDate !== undefined) updateObj.visitDate = visitDate;
+
     const lead = await LEAD.findByIdAndUpdate(
       id,
-      { isVisitDone },
+      updateObj,
       { new: true }
     );
     if (!lead) {

@@ -125,7 +125,15 @@ const LeadSchema = new Schema(
     },
     isVisitDone: {
       type: Boolean,
-      default: null,
+      default: false
+    },
+    isVisitCompleted: {
+      type: Boolean,
+      default: false
+    },
+    visitDate: {
+      type: Date,
+      default: null
     },
     nextFollowupDate: {
       type: Date,

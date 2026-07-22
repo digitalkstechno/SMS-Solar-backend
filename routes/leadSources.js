@@ -19,7 +19,6 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  authorize("leadSource", "readAll"),
   fetchAllLeadSources,
 );
 router.get(

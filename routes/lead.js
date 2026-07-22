@@ -45,6 +45,8 @@ router.post("/create", authMiddleware, authorize("lead", "create"), upload.array
 router.get("/my", authMiddleware, fetchMyLeads);
 router.get("/count-summary/my", authMiddleware, getMyLeadSummary);
 router.get("/dashboard-stats", authMiddleware, leadReadScope(), getDashboardStats);
+router.get("/visit-stats", authMiddleware, leadReadScope(), require("../controller/lead").getVisitStats);
+router.get("/visit-leads", authMiddleware, leadReadScope(), require("../controller/lead").getVisitLeads);
 router.get("/", authMiddleware, leadReadScope(), fetchAllLeads);
 router.get("/kanban", authMiddleware, leadReadScope(), fetchLeadsForKanban);
 router.get("/kanban-status", authMiddleware, leadReadScope(), fetchKanbanLeadsByStatus);
