@@ -160,6 +160,21 @@ exports.fetchAllLeads = async (req, res) => {
     }
 
     /* =====================
+       VISIT FILTER
+    ====================== */
+    if (req.query.visit) {
+      if (req.query.visit === 'scheduled') {
+        query.visitDate = { $exists: true, $ne: null };
+        query.isVisitCompleted = { $ne: true };
+      } else if (req.query.visit === 'completed') {
+        query.isVisitCompleted = true;
+      } else if (req.query.visit === 'none') {
+        query.visitDate = { $eq: null };
+        query.isVisitCompleted = { $ne: true };
+      }
+    }
+
+    /* =====================
        DATE RANGE FILTER
     ====================== */
     if (from || to) {
