@@ -165,12 +165,17 @@ exports.fetchAllLeads = async (req, res) => {
     if (req.query.visit) {
       if (req.query.visit === 'scheduled') {
         query.visitDate = { $exists: true, $ne: null };
-        query.isVisitCompleted = { $ne: true };
+        query.$and = [
+          { isVisitCompleted: { $ne: true } },
+          { isVisitDone: { $ne: true } }
+        ];
       } else if (req.query.visit === 'completed') {
-        query.isVisitCompleted = true;
+        query.$or = [
+          { isVisitCompleted: true },
+          { isVisitDone: true }
+        ];
       } else if (req.query.visit === 'none') {
         query.visitDate = { $eq: null };
-        query.isVisitCompleted = { $ne: true };
       }
     }
 
