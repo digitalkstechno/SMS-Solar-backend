@@ -5,6 +5,17 @@ const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const User = require('../model/user');
 
+let globalBrowser = null;
+const getBrowser = async () => {
+  if (!globalBrowser) {
+    globalBrowser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+    });
+  }
+  return globalBrowser;
+};
+
 const generatePdfBuffer = async (quotation, lead) => {
   try {
     const templatePath = path.join(__dirname, '../views/quotationTemplate.ejs');
@@ -57,7 +68,7 @@ const generatePdfBuffer = async (quotation, lead) => {
 
     let logoBase64 = '';
     try {
-      const logoPath = path.join(__dirname, '../../SMS-Solar-Frontend/public/logo/solar (2).png');
+      const logoPath = path.join(__dirname, '../pdfs/sms.png');
       if (fs.existsSync(logoPath)) {
         logoBase64 = fs.readFileSync(logoPath, 'base64');
       }
@@ -77,16 +88,13 @@ const generatePdfBuffer = async (quotation, lead) => {
       basePath
     });
 
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-    });
+    const browser = await getBrowser();
 
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle2' });
+    await page.setContent(html, { waitUntil: 'load' });
 
     // Allow JS in template to run and calculate values
-    await page.evaluate(() => new Promise(r => setTimeout(r, 800)));
+    await page.evaluate(() => new Promise(r => setTimeout(r, 100)));
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -99,7 +107,7 @@ const generatePdfBuffer = async (quotation, lead) => {
       }
     });
 
-    await browser.close();
+    await page.close();
     // Convert Uint8Array to Buffer for Express res.send
     return Buffer.from(pdfBuffer);
   } catch (error) {
