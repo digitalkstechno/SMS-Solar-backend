@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const ejs = require('ejs');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const User = require('../model/user');
 const QuotationOption = require('../model/QuotationOption');
 
@@ -10,6 +10,7 @@ let globalBrowser = null;
 const getBrowser = async () => {
   if (!globalBrowser) {
     globalBrowser = await puppeteer.launch({
+      executablePath: process.env.CHROME_BIN || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     });
