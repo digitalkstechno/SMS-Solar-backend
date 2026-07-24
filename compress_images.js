@@ -33,6 +33,23 @@ async function run() {
   await optimizeImage('Residential.jpeg', 500);
   await optimizeImage('commercial.png', 500); 
   await optimizeImage('Industrial.jpeg', 500);
+  
+  
+  try {
+    const bannerPath = path.join(__dirname, 'pdfs', 'commercialbanner.png');
+    const tempBanner = path.join(__dirname, 'pdfs', 'temp_banner.png');
+    if (fs.existsSync(bannerPath)) {
+      await sharp(bannerPath)
+        .resize({ width: 800, withoutEnlargement: true })
+        .png({ palette: true, quality: 75, compressionLevel: 8 })
+        .toFile(tempBanner);
+      fs.unlinkSync(bannerPath);
+      fs.renameSync(tempBanner, bannerPath);
+      console.log('Optimized commercialbanner.png safely');
+    }
+  } catch (err) {
+    console.error('Error optimizing banner:', err);
+  }
 
   await optimizeImage('stemp.jpeg', 300);
   
