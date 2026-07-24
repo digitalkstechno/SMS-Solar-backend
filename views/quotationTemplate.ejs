@@ -963,9 +963,16 @@
 
               <div class="eyebrow"
                 style="margin-top:55px; color:#e19fb9; font-weight:700; font-size:12px; letter-spacing:0.1em;">
-                COMMERCIAL SOLAR</div>
+                <%= (lead.projecttype || lead.projectType || 'COMMERCIAL').toUpperCase() %> OFFER</div>
+              <%
+                let targetWord = 'business';
+                let pt = (lead.projecttype || lead.projectType) ? (lead.projecttype || lead.projectType).toLowerCase() : '';
+                if (pt.includes('resident') || pt.includes('home')) targetWord = 'home';
+                else if (pt.includes('industr')) targetWord = 'industry';
+                else if (pt.includes('commercial')) targetWord = 'building';
+              %>
               <h1 style="font-family:'Times New Roman', Times, serif; font-size:48px; line-height:1.15; margin:15px 0;">
-                Power your<br />business with<br />clean, reliable<br />energy.</h1>
+                Power your<br /><%= targetWord %> with<br />clean, reliable<br />energy.</h1>
               <div class="coverSub" id="coverSize" style="margin-top:20px; font-size:16px; font-weight:500;">SME On-Grid
                 Solar Systems</div>
             </div>
@@ -1012,20 +1019,14 @@
                 <p style="font-size:12px; line-height:1.6; opacity:0.95; margin:0;">Our on-grid solar solutions help
                   businesses reduce costs, enhance energy independence, and contribute to a sustainable future.</p>
 
-                <div
-                  style="display:flex; gap:20px; margin-top:15px; font-size:11px; align-items:center; font-weight:500;">
-                  <div style="display:flex; align-items:center; gap:6px;"><span
-                      style="font-size:16px; color:#00d2ff;">🌐</span> Smart Energy<br />Solutions</div>
-                  <div style="display:flex; align-items:center; gap:6px;"><span
-                      style="font-size:16px; color:#ffdd00;">☀️</span> Stronger Today<br />Brighter Tomorrow</div>
-                  <div style="display:flex; align-items:center; gap:6px;"><span
-                      style="font-size:16px; color:#52c41a;">🍃</span> Sustainable<br />by Choice</div>
+                <div style="margin-top:15px; font-size:11px; font-weight:500; line-height:1.5; color:#f0f0f0; max-width: 300px;">
+                  328, SUN TRADE CENTRE, NEAR DGVCL OFFICE RAMNAGAR, RANDER, SURAT - 395005
                 </div>
               </div>
 
               <div
-                style="background:#fff; color:#822650; font-weight:800; font-size:14px; padding:15px 30px; border-radius:30px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); line-height:1.4; margin-bottom:10px;">
-                Let's Build a<br />Sustainable Future<br />Together
+                style="background:#fff; color:#822650; font-weight:800; font-size:15px; padding:15px 30px; border-radius:30px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); line-height:1.4; margin-bottom:10px;">
+                Phone: <br/>+91 8200802153
               </div>
             </div>
           </div>
@@ -1086,65 +1087,67 @@
           </div>
           <div class="footer"><span><b>SMS ENTERPRISE</b></span><span class="pageNum">02</span></div>
         </section>
-        <section class="page">
+        <section class="page" style="height: 297mm !important; display: flex; flex-direction: column;">
           <div class="kicker" style="margin-top: 30px;">04 · Technical specifications</div>
           <h2>Quality in every connection.</h2>
 
-          <div class="brand-category">
-            <h3
-              style="font-family:'Times New Roman', Times, serif; font-size:18px; margin: 20px 0 10px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 5px;">
-              Panels</h3>
-            <div class="brand-boxes" style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-              <div style="display:flex; flex-wrap:wrap; gap:15px;">
-                <div class="brand-box"><b style="color:#1d2951">ADANI</b><small>SOLAR</small></div>
-                <div class="brand-box"><b style="color:#15865e">WAAREE</b><small>SOLAR</small></div>
-                <div class="brand-box"><b style="color:#4a2b64">PAHAL</b><small>SOLAR</small></div>
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0 60px 0;">
+            <div class="brand-category" style="margin-top: 30px;">
+              <h3
+                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                Panels</h3>
+              <div class="brand-boxes" style="display:flex; flex-direction:column; gap:40px; margin-top:15px; align-items: center;">
+                <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
+                  <img src="<%= basePath %>/pdfs/technical/adani.PNG" style="height: 55px; object-fit: contain;" alt="Adani" />
+                  <img src="<%= basePath %>/pdfs/technical/wareee.PNG" style="height: 55px; object-fit: contain;" alt="Waaree" />
+                  <img src="<%= basePath %>/pdfs/technical/pahal.PNG" style="height: 55px; object-fit: contain;" alt="Pahal" />
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
+                  <img src="<%= basePath %>/pdfs/technical/goldi.PNG" style="height: 55px; object-fit: contain;" alt="Goldi" />
+                  <img src="<%= basePath %>/pdfs/technical/rayzon.PNG" style="height: 55px; object-fit: contain;" alt="Rayzon" />
+                  <img src="<%= basePath %>/pdfs/technical/avaada.PNG" style="height: 55px; object-fit: contain;" alt="Avaada" />
+                </div>
               </div>
-              <div style="display:flex; flex-wrap:wrap; gap:15px;">
-                <div class="brand-box"><b style="color:#0a3a6a">GOLDI</b><small>SOLAR</small></div>
-                <div class="brand-box"><b style="color:#d95c14">RAYZON</b><small>SOLAR</small></div>
-                <div class="brand-box"><b style="color:#1976c9">AVAADA</b><small>SOLAR</small></div>
+            </div>
+
+            <div class="brand-category" style="margin-top: 30px;">
+              <h3
+                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                Inverter</h3>
+              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                <img src="<%= basePath %>/pdfs/technical/solaryan.PNG" style="height: 55px; object-fit: contain;" alt="Solaryaan" />
+                <img src="<%= basePath %>/pdfs/technical/velox.PNG" style="height: 55px; object-fit: contain;" alt="Velox" />
+                <img src="<%= basePath %>/pdfs/technical/vsole.PNG" style="height: 55px; object-fit: contain;" alt="Vsole" />
               </div>
             </div>
-          </div>
 
-          <div class="brand-category">
-            <h3
-              style="font-family:'Times New Roman', Times, serif; font-size:18px; margin: 30px 0 10px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 5px;">
-              Inverter</h3>
-            <div class="brand-boxes" style="gap:15px; margin-top:10px;">
-              <div class="brand-box"><b style="color:#1976c9">SOLARYAAN</b><small>INVERTER</small></div>
-              <div class="brand-box"><b style="color:#34558b">VELOX</b><small>INVERTER</small></div>
-              <div class="brand-box"><b style="color:#4a4a4a">VSOLE</b><small>INVERTER</small></div>
+            <div class="brand-category" style="margin-top: 30px;">
+              <h3
+                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                Cables</h3>
+              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                <img src="<%= basePath %>/pdfs/technical/polycab.PNG" style="height: 55px; object-fit: contain;" alt="Polycab" />
+                <img src="<%= basePath %>/pdfs/technical/rr.PNG" style="height: 55px; object-fit: contain;" alt="RR Kabel" />
+              </div>
             </div>
-          </div>
 
-          <div class="brand-category">
-            <h3
-              style="font-family:'Times New Roman', Times, serif; font-size:18px; margin: 30px 0 10px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 5px;">
-              Cables</h3>
-            <div class="brand-boxes" style="gap:15px; margin-top:10px;">
-              <div class="brand-box"><b style="color:#d92128">POLYCAB</b><small>CABLES</small></div>
-              <div class="brand-box"><b style="color:#d95c14">RR KABEL</b><small>CABLES</small></div>
+            <div class="brand-category" style="margin-top: 30px;">
+              <h3
+                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                Structure</h3>
+              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                <img src="<%= basePath %>/pdfs/technical/hindustan.PNG" style="height: 55px; object-fit: contain;" alt="Hindustan" />
+                <img src="<%= basePath %>/pdfs/technical/aplapollo.PNG" style="height: 55px; object-fit: contain;" alt="APL Apollo" />
+              </div>
             </div>
-          </div>
 
-          <div class="brand-category">
-            <h3
-              style="font-family:'Times New Roman', Times, serif; font-size:18px; margin: 30px 0 10px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 5px;">
-              Structure</h3>
-            <div class="brand-boxes" style="gap:15px; margin-top:10px;">
-              <div class="brand-box"><b style="color:#4a4a4a">HINDUSTAN</b><small>STRUCTURE</small></div>
-              <div class="brand-box"><b style="color:#00a3e0">APL APOLLO</b><small>STRUCTURE</small></div>
-            </div>
-          </div>
-
-          <div class="brand-category">
-            <h3
-              style="font-family:'Times New Roman', Times, serif; font-size:18px; margin: 30px 0 10px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 5px;">
-              Earthing & Protection</h3>
-            <div class="brand-boxes" style="display:flex; justify-content:start; gap:15px; margin-top:10px;">
-              <div class="brand-box"><b style="color:#008b8b">E-Link</b><small>Earthing</small></div>
+            <div class="brand-category" style="margin-top: 30px;">
+              <h3
+                style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
+                Earthing & Protection</h3>
+              <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
+                <img src="<%= basePath %>/pdfs/technical/elink.png" style="height: 55px; object-fit: contain;" alt="E-Link" />
+              </div>
             </div>
           </div>
 
@@ -1478,7 +1481,7 @@
               <div class="kicker" style="text-transform:uppercase; letter-spacing:0.15em;">CUSTOMER ACCEPTANCE</div>
             </div>
             <div class="signature"
-              style="margin-top:60px; margin-bottom: 10px; display:grid; grid-template-columns:1fr 1fr; row-gap: 30px; column-gap: 65px; align-items:end;">
+              style="margin-top:40px; margin-bottom: 20px; display:grid; grid-template-columns:1fr 1fr; row-gap: 30px; column-gap: 65px; align-items:end;">
               <div>
                 <div style="border-top:1px solid #1c1620; padding-top:12px;">
                   <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Customer signature
@@ -1517,6 +1520,17 @@
                 </div>
               </div>
             </div>
+
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);">
+              <h3 style="color: var(--p); font-size: 16px; font-weight: 700; margin-bottom: 15px; font-family: 'Times New Roman', Times, serif;">Required Documents for Registration</h3>
+              <ul style="list-style-type: disc; padding-left: 20px; color: var(--ink); font-weight: 600; font-size: 14px; line-height: 2; margin: 0;">
+                <li>Latest light bill</li>
+                <li>Latest tax bill</li>
+                <li>Cancel check</li>
+                <li>PAN card</li>
+                <li>Aadhaar card</li>
+              </ul>
+            </div>
           </div>
           <div class="thanks-half"
             style="background:transparent;color:var(--ink);padding:40px;position:relative;display:flex;flex-direction:column;justify-content:flex-end">
@@ -1554,16 +1568,25 @@
     refreshProducts();
   </script>
   <script>
-    /* SMS Enterprise approved variable product catalogue */
-    $('module').innerHTML = '<option value="Adani | N-Type TOPCon Bifacial | 540">Adani · N-Type TOPCon Bifacial · 540 W</option><option value="Waaree | N-Type TOPCon Bifacial | 550">Waaree · N-Type TOPCon Bifacial · 550 W</option><option value="Pahal | Mono PERC Half-Cut | 540">Pahal · Mono PERC Half-Cut · 540 W</option><option value="Goldi | N-Type TOPCon | 550">Goldi · N-Type TOPCon · 550 W</option><option value="Rayzon | N-Type TOPCon Bifacial | 575">Rayzon · N-Type TOPCon Bifacial · 575 W</option>';
-    $('inverter').innerHTML = '<option>Velox · On-Grid Inverter</option><option>Solaryaan · On-Grid Inverter</option>';
-    $('structure').innerHTML = '<option>Hindustaar Solar Mounting Structure</option>';
-    $('dcdb').innerHTML = '<option>Simens DCDB with Type II SPD</option>';
-    $('acdb').innerHTML = '<option>Simens ACDB with Type II SPD</option>';
-    $('roof').closest('.field').insertAdjacentHTML('beforebegin', '<div class="field"><label>Solar cable product</label><select id="cables"><option>Polycab Solar DC Cable & AC Cable</option></select></div>');
+    /* SMS Enterprise approved variable product catalogue (Dynamic from Backend) */
+    <% 
+      const getOptionsHTML = (key, defaultOptions) => {
+        if (!quotationOptions || quotationOptions.length === 0) return defaultOptions;
+        const options = quotationOptions.filter(o => o.key === key);
+        if (options.length === 0) return defaultOptions;
+        return options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+      };
+    %>
+    
+    $('module').innerHTML = `<%- getOptionsHTML('module', '<option value="Adani | N-Type TOPCon Bifacial | 540">Adani · N-Type TOPCon Bifacial · 540 W</option><option value="Waaree | N-Type TOPCon Bifacial | 550">Waaree · N-Type TOPCon Bifacial · 550 W</option><option value="Pahal | Mono PERC Half-Cut | 540">Pahal · Mono PERC Half-Cut · 540 W</option><option value="Goldi | N-Type TOPCon | 550">Goldi · N-Type TOPCon · 550 W</option><option value="Rayzon | N-Type TOPCon Bifacial | 575">Rayzon · N-Type TOPCon Bifacial · 575 W</option>') %>`;
+    $('inverter').innerHTML = `<%- getOptionsHTML('inverter', '<option>Velox · On-Grid Inverter</option><option>Solaryaan · On-Grid Inverter</option>') %>`;
+    $('structure').innerHTML = `<%- getOptionsHTML('structure', '<option>Hindustaar Solar Mounting Structure</option>') %>`;
+    $('dcdb').innerHTML = `<%- getOptionsHTML('dcdb', '<option>Simens DCDB with Type II SPD</option>') %>`;
+    $('acdb').innerHTML = `<%- getOptionsHTML('acdb', '<option>Simens ACDB with Type II SPD</option>') %>`;
+    $('roof').closest('.field').insertAdjacentHTML('beforebegin', '<div class="field"><label>Solar cable product</label><select id="cables">' + `<%- getOptionsHTML('cables', '<option>Polycab Solar DC Cable & AC Cable</option>') %>` + '</select></div>');
     pages[4].querySelector('tbody').insertAdjacentHTML('beforeend', '<tr><td><b>Solar cables</b></td><td data-cables></td><td>UV-resistant solar DC / AC cable</td></tr>');
-    function refreshProducts() { const moduleParts = $('module').value.split(' | '); $('watt').value = moduleParts[2]; calc(); set('[data-module]', moduleParts[0] + ' · ' + moduleParts[1] + ' · ' + moduleParts[2] + ' W'); set('[data-inverter]', $('inverter').value); set('[data-structure]', $('structure').value); set('[data-dcdb]', $('dcdb').value); set('[data-acdb]', $('acdb').value); set('[data-cables]', $('cables').value) }
-    ['module', 'inverter', 'structure', 'dcdb', 'acdb', 'cables'].forEach(id => $('' + id).addEventListener('change', refreshProducts));
+    function refreshProducts() { const moduleParts = $('module').value.split(' | '); $('watt').value = moduleParts.length > 2 ? moduleParts[2] : ($('watt').value || 1); calc(); set('[data-module]', moduleParts.length > 2 ? moduleParts[0] + ' · ' + moduleParts[1] + ' · ' + moduleParts[2] + ' W' : $('module').value); set('[data-inverter]', $('inverter').value); set('[data-structure]', $('structure').value); set('[data-dcdb]', $('dcdb').value); set('[data-acdb]', $('acdb').value); set('[data-cables]', $('cables').value) }
+    ['module', 'inverter', 'structure', 'dcdb', 'acdb', 'cables'].forEach(id => { if($(id)) $(id).addEventListener('change', refreshProducts); });
     refreshProducts();
   </script>
   <script>

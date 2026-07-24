@@ -18,7 +18,7 @@ exports.addOption = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Key, label, and value are required' });
         }
 
-        // Check if already exists to prevent duplicates
+      
         const existing = await QuotationOption.findOne({ key, value });
         if (existing) {
             return res.status(200).json({ success: true, data: existing });
@@ -31,5 +31,19 @@ exports.addOption = async (req, res) => {
     } catch (error) {
         console.error('Error adding quotation option:', error);
         res.status(500).json({ success: false, message: 'Failed to add option' });
+    }
+};
+
+exports.deleteOption = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedOption = await QuotationOption.findByIdAndDelete(id);
+        if (!deletedOption) {
+            return res.status(404).json({ success: false, message: 'Option not found' });
+        }
+        res.status(200).json({ success: true, message: 'Option deleted successfully', data: deletedOption });
+    } catch (error) {
+        console.error('Error deleting quotation option:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete option' });
     }
 };

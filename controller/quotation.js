@@ -4,6 +4,7 @@ const axios = require('axios');
 const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const User = require('../model/user');
+const QuotationOption = require('../model/QuotationOption');
 
 let globalBrowser = null;
 const getBrowser = async () => {
@@ -79,13 +80,21 @@ const generatePdfBuffer = async (quotation, lead) => {
     const port = process.env.PORT || 5001;
     const basePath = `http://127.0.0.1:${port}`;
 
+    let quotationOptions = [];
+    try {
+      quotationOptions = await QuotationOption.find({});
+    } catch (err) {
+      console.error("Error fetching quotation options:", err);
+    }
+
     const html = await ejs.renderFile(templatePath, {
       quotation: mergedQuotation,
       lead: mergedLead,
       qrBase64,
       logoBase64,
       process: process,
-      basePath
+      basePath,
+      quotationOptions
     });
 
     const browser = await getBrowser();
@@ -153,7 +162,7 @@ exports.sendWhatsAppQuotation = async (req, res) => {
 
     const pdfUrl = `${process.env.BACKEND_PDF_URL}/pdfs/${filename}`;
     
-    let phoneNumber = lead.contact.replace(/\D/g, '');
+    let phoneNumber = String(lead.contact).replace(/\D/g, '');
     if (phoneNumber.length === 10) phoneNumber = `91${phoneNumber}`;
 
     const waDomain = process.env.WA_DOMAIN;
