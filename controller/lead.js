@@ -635,6 +635,8 @@ exports.fetchLeadsForKanban = async (req, res) => {
     }
 
     const allStatuses = await LeadStatus.find().sort({ order: 1 });
+    const LeadSource = require("../model/leadSources");
+    const leadSources = await LeadSource.find().lean();
 
     // If statuses are selected, only return those statuses
     const statusesToFetch = status
@@ -652,7 +654,17 @@ exports.fetchLeadsForKanban = async (req, res) => {
           .populate("assignedTo")
           .populate("createdBy")
           .sort({ createdAt: -1 })
-          .limit(10);
+          .limit(10)
+          .lean();
+
+        leads.forEach(lead => {
+          if (lead.leadrefrance) {
+            const source = leadSources.find(s => s._id.toString() === lead.leadrefrance.toString());
+            if (source) {
+              lead.leadrefranceName = source.name;
+            }
+          }
+        });
 
         return {
           statusId: status._id.toString(),
@@ -741,7 +753,20 @@ exports.fetchKanbanLeadsByStatus = async (req, res) => {
       .populate("createdBy")
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
+
+    const LeadSource = require("../model/leadSources");
+    const leadSources = await LeadSource.find().lean();
+
+    leads.forEach(lead => {
+      if (lead.leadrefrance) {
+        const source = leadSources.find(s => s._id.toString() === lead.leadrefrance.toString());
+        if (source) {
+          lead.leadrefranceName = source.name;
+        }
+      }
+    });
 
     const total = await LEAD.countDocuments(match);
 
