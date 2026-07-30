@@ -897,13 +897,13 @@
     <main class="workspace">
       <div id="injectedData" style="display:none;">
         <input id="size"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('size') || t.includes('capacity'); })?.values[0] || 0 %>" />
         <input id="watt"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('module w') || t === 'wp'; })?.values[0] || 0 %>" />
         <input id="rate"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('unit') || t.includes('rate'); })?.values[0] || 0 %>" />
         <input id="gross"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => { let t = (r.title||'').toLowerCase(); return t.includes('gross') || t.includes('customer payable'); })?.values[0] || 0 %>" />
         <input id="subsidy"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 0 %>" />
         <input id="loan"
@@ -934,7 +934,7 @@
           style="position:relative; background-color:#fff; padding:0; overflow:hidden; height:297mm !important; min-height:297mm !important;">
           <!-- Background Image with Gradient for Text Readability -->
           <div style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:0;">
-            <% let bannerImg='residentialbanner.jpg' ; // default to residential let pTypeForBanner=(lead.projecttype ||
+            <% let bannerImg='residentialbanner.jpg' ; /* default to residential */ let pTypeForBanner=(lead.projecttype ||
               lead.projectType || '' ).toLowerCase(); if (pTypeForBanner.includes('commercial')) {
               bannerImg='commercialbanner.png' ; } else if (pTypeForBanner.includes('industr')) {
               bannerImg='Industrialbanner.jpeg' ; } %>

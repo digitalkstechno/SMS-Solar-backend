@@ -145,8 +145,8 @@ const generatePdfBuffer = async (quotation, lead) => {
 
 exports.generateQuotation = async (req, res) => {
   try {
-    const { quotation, lead, data } = req.body;
-    const actualLead = lead || data;
+    const { quotation, lead, data, leadId, lead_id } = req.body;
+    const actualLead = lead || data || leadId || lead_id || quotation?.leadId || quotation?.lead_id;
     const pdfBuffer = await generatePdfBuffer(quotation, actualLead);
     
     res.setHeader('Content-Type', 'application/pdf');
@@ -162,8 +162,8 @@ exports.generateQuotation = async (req, res) => {
 
 exports.sendWhatsAppQuotation = async (req, res) => {
   try {
-    const { lead, quotation, data } = req.body;
-    const actualLead = lead || data;
+    const { lead, quotation, data, leadId, lead_id } = req.body;
+    const actualLead = lead || data || leadId || lead_id || quotation?.leadId || quotation?.lead_id;
     if (!actualLead || !actualLead.contact) {
       return res.status(400).json({ success: false, message: 'Lead contact number is required' });
     }
