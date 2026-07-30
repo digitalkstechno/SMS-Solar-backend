@@ -896,19 +896,19 @@
     <main class="workspace">
       <div id="injectedData" style="display:none;">
         <input id="size"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 5 %>" />
         <input id="watt"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 540 %>" />
         <input id="rate"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 8 %>" />
         <input id="gross"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 325000 %>" />
         <input id="subsidy"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 78000 %>" />
         <input id="loan"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
         <input id="bill"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 0 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 6500 %>" />
         <input id="name" value="<%= lead.fullName || 'Customer' %>" />
         <input id="proposal" value="<%= lead.leadrefrance || 'N/A' %>" />
         <input id="exec" value="<%= lead.assignName || lead.assignedTo?.fullName || 'Sales Executive' %>" />
