@@ -23,9 +23,8 @@ const generatePdfBuffer = async (quotation, lead) => {
     const templatePath = path.join(__dirname, '../views/quotationTemplate.ejs');
     
     const defaultLead = {
-      fullName: 'Customer',
-      leadrefrance: '',
-      assignName: 'Sales Executive',
+      fullName: '',
+      assignName: '',
       contact: '',
       assignContact: ''
     };

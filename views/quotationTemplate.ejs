@@ -192,6 +192,7 @@
         top: 20px;
         left: 15px;
       }
+
       .page {
         display: flex !important;
         flex-direction: column;
@@ -896,20 +897,20 @@
     <main class="workspace">
       <div id="injectedData" style="display:none;">
         <input id="size"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 5 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 0 %>" />
         <input id="watt"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 540 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 0 %>" />
         <input id="rate"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 8 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 0 %>" />
         <input id="gross"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 325000 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 0 %>" />
         <input id="subsidy"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 78000 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 0 %>" />
         <input id="loan"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
         <input id="bill"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 6500 %>" />
-        <input id="name" value="<%= lead.fullName || 'Customer' %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 0 %>" />
+        <input id="name" value="<%= lead.fullName || data.fullName || 'Customer' %>" />
         <input id="proposal" value="<%= lead.leadrefrance || 'N/A' %>" />
         <input id="exec" value="<%= lead.assignName || lead.assignedTo?.fullName || 'Sales Executive' %>" />
         <input id="module" value="<%= quotation.solarModule %>" />
@@ -933,20 +934,15 @@
           style="position:relative; background-color:#fff; padding:0; overflow:hidden; height:297mm !important; min-height:297mm !important;">
           <!-- Background Image with Gradient for Text Readability -->
           <div style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:0;">
-            <%
-              let bannerImg = 'residentialbanner.jpg'; // default to residential
-              let pTypeForBanner = (lead.projecttype || lead.projectType || '').toLowerCase();
-              if (pTypeForBanner.includes('commercial')) {
-                bannerImg = 'commercialbanner.png';
-              } else if (pTypeForBanner.includes('industr')) {
-                bannerImg = 'Industrialbanner.jpeg';
-              }
-            %>
-            <img src="<%= basePath %>/pdfs/<%= bannerImg %>"
-              style="width:100%; height:100%; object-fit:cover; object-position: center;" />
-            <div
-              style="position:absolute; top:0; left:0; width:100%; height:65%; background:linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 80%);">
-            </div>
+            <% let bannerImg='residentialbanner.jpg' ; // default to residential let pTypeForBanner=(lead.projecttype ||
+              lead.projectType || '' ).toLowerCase(); if (pTypeForBanner.includes('commercial')) {
+              bannerImg='commercialbanner.png' ; } else if (pTypeForBanner.includes('industr')) {
+              bannerImg='Industrialbanner.jpeg' ; } %>
+              <img src="<%= basePath %>/pdfs/<%= bannerImg %>"
+                style="width:100%; height:100%; object-fit:cover; object-position: center;" />
+              <div
+                style="position:absolute; top:0; left:0; width:100%; height:65%; background:linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 80%);">
+              </div>
           </div>
 
           <!-- Bottom White Blob SVG -->
@@ -966,38 +962,42 @@
             style="position:absolute; top:0; bottom:0; left:0; right:0; z-index:10; display:flex; flex-direction:column; padding:0;">
             <!-- TOP SECTION -->
             <div style="padding: 40px; color:#fff; width:70%; height:55%;">
-              <div class="logo" style="margin-bottom:10px; margin-left:-20px;"><img src="<%= (typeof logoBase64 !== 'undefined' && logoBase64) ? 'data:image/png;base64,' + logoBase64 : basePath + '/pdfs/sms.png' %>"
+              <div class="logo" style="margin-bottom:10px; margin-left:-20px;"><img
+                  src="<%= (typeof logoBase64 !== 'undefined' && logoBase64) ? 'data:image/png;base64,' + logoBase64 : basePath + '/pdfs/sms.png' %>"
                   alt="SMS ENTERPRISE" style="max-height: 100px;" /></div>
               <div style="font-size:12px; opacity:0.9; line-height:1.4;">Powering a<br />Sustainable Tomorrow</div>
 
               <div class="eyebrow"
                 style="margin-top:55px; color:#e19fb9; font-weight:700; font-size:12px; letter-spacing:0.1em;">
-                <%= (lead.projecttype || lead.projectType || 'COMMERCIAL').toUpperCase() %> OFFER</div>
-              <%
-                let targetWord = 'business';
-                let pt = (lead.projecttype || lead.projectType) ? (lead.projecttype || lead.projectType).toLowerCase() : '';
-                if (pt.includes('resident') || pt.includes('home')) targetWord = 'home';
-                else if (pt.includes('industr')) targetWord = 'industry';
-                else if (pt.includes('commercial')) targetWord = 'building';
-              %>
-              <h1 style="font-family:'Times New Roman', Times, serif; font-size:48px; line-height:1.15; margin:15px 0;">
-                Power your<br /><%= targetWord %> with<br />clean, reliable<br />energy.</h1>
-              <div class="coverSub" id="coverSize" style="margin-top:20px; font-size:16px; font-weight:500;">SME On-Grid
-                Solar Systems</div>
+                <%= (lead.projecttype || lead.projectType || 'COMMERCIAL' ).toUpperCase() %> OFFER
+              </div>
+              <% let targetWord='business' ; let pt=(lead.projecttype || lead.projectType) ? (lead.projecttype ||
+                lead.projectType).toLowerCase() : '' ; if (pt.includes('resident') || pt.includes('home'))
+                targetWord='home' ; else if (pt.includes('industr')) targetWord='industry' ; else if
+                (pt.includes('commercial')) targetWord='building' ; %>
+                <h1
+                  style="font-family:'Times New Roman', Times, serif; font-size:48px; line-height:1.15; margin:15px 0;">
+                  Power your<br />
+                  <%= targetWord %> with<br />clean, reliable<br />energy.
+                </h1>
+                <div class="coverSub" id="coverSize" style="margin-top:20px; font-size:16px; font-weight:500;">SME
+                  On-Grid
+                  Solar Systems</div>
             </div>
 
             <!-- MIDDLE SECTION -->
-            <div style="padding: 10px 40px 0; position:relative; z-index:11; flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
+            <div
+              style="padding: 10px 40px 0; position:relative; z-index:11; flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
               <div class="kicker" style="color:#822650; font-weight:800; font-size:11px; margin-bottom:15px;">PREPARED
                 EXCLUSIVELY FOR</div>
               <div style="display:flex; gap:30px; align-items:center;">
                 <div style="min-width: 150px;">
                   <h2 data-name
                     style="font-family:'Times New Roman', Times, serif; font-size:40px; margin:0; color:#1c1620; line-height:1;">
-                    <%= lead.fullName || "Customer" %>
+                    <%= lead.fullName || data.fullName || "Customer" %>
                   </h2>
                   <p style="font-size:16px; font-weight:800; color:#1c1620; margin:10px 0 0 0;">
-                    <%= lead.contact || "" %>
+                    <%= lead.contact ||  "" %>
                   </p>
                 </div>
                 <div
@@ -1028,14 +1028,15 @@
                 <p style="font-size:12px; line-height:1.6; opacity:0.95; margin:0;">Our on-grid solar solutions help
                   businesses reduce costs, enhance energy independence, and contribute to a sustainable future.</p>
 
-                <div style="margin-top:15px; font-size:11px; font-weight:500; line-height:1.5; color:#f0f0f0; max-width: 300px;">
+                <div
+                  style="margin-top:15px; font-size:11px; font-weight:500; line-height:1.5; color:#f0f0f0; max-width: 300px;">
                   328, SUN TRADE CENTRE, NEAR DGVCL OFFICE RAMNAGAR, RANDER, SURAT - 395005
                 </div>
               </div>
 
               <div
                 style="background:#fff; color:#822650; font-weight:800; font-size:15px; padding:15px 30px; border-radius:30px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); line-height:1.4; margin-bottom:10px;">
-                Phone: <br/>+91 8200802153
+                Phone: <br />+91 8200802153
               </div>
             </div>
           </div>
@@ -1070,7 +1071,7 @@
           <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
           <div class="kicker">03 · Proposed system</div>
           <h2>Designed for <span data-name>
-              <%= lead.fullName || "Customer" %>
+              <%= lead.fullName || data.fullName || "Customer" %>
             </span>.</h2>
           <div class="twocol">
             <div class="offer">
@@ -1100,21 +1101,29 @@
           <div class="kicker" style="margin-top: 30px;">04 · Technical specifications</div>
           <h2>Quality in every connection.</h2>
 
-          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0 60px 0;">
+          <div
+            style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0 60px 0;">
             <div class="brand-category" style="margin-top: 30px;">
               <h3
                 style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
                 Panels</h3>
-              <div class="brand-boxes" style="display:flex; flex-direction:column; gap:40px; margin-top:15px; align-items: center;">
+              <div class="brand-boxes"
+                style="display:flex; flex-direction:column; gap:40px; margin-top:15px; align-items: center;">
                 <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
-                  <img src="<%= basePath %>/pdfs/technical/adani.PNG" style="height: 55px; object-fit: contain;" alt="Adani" />
-                  <img src="<%= basePath %>/pdfs/technical/wareee.PNG" style="height: 55px; object-fit: contain;" alt="Waaree" />
-                  <img src="<%= basePath %>/pdfs/technical/pahal.PNG" style="height: 55px; object-fit: contain;" alt="Pahal" />
+                  <img src="<%= basePath %>/pdfs/technical/adani.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Adani" />
+                  <img src="<%= basePath %>/pdfs/technical/wareee.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Waaree" />
+                  <img src="<%= basePath %>/pdfs/technical/pahal.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Pahal" />
                 </div>
                 <div style="display:flex; flex-wrap:wrap; gap:40px; justify-content: center;">
-                  <img src="<%= basePath %>/pdfs/technical/goldi.PNG" style="height: 55px; object-fit: contain;" alt="Goldi" />
-                  <img src="<%= basePath %>/pdfs/technical/rayzon.PNG" style="height: 55px; object-fit: contain;" alt="Rayzon" />
-                  <img src="<%= basePath %>/pdfs/technical/avaada.PNG" style="height: 55px; object-fit: contain;" alt="Avaada" />
+                  <img src="<%= basePath %>/pdfs/technical/goldi.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Goldi" />
+                  <img src="<%= basePath %>/pdfs/technical/rayzon.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Rayzon" />
+                  <img src="<%= basePath %>/pdfs/technical/avaada.PNG" style="height: 55px; object-fit: contain;"
+                    alt="Avaada" />
                 </div>
               </div>
             </div>
@@ -1124,9 +1133,12 @@
                 style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
                 Inverter</h3>
               <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/solaryan.PNG" style="height: 55px; object-fit: contain;" alt="Solaryaan" />
-                <img src="<%= basePath %>/pdfs/technical/velox.PNG" style="height: 55px; object-fit: contain;" alt="Velox" />
-                <img src="<%= basePath %>/pdfs/technical/vsole.PNG" style="height: 55px; object-fit: contain;" alt="Vsole" />
+                <img src="<%= basePath %>/pdfs/technical/solaryan.PNG" style="height: 55px; object-fit: contain;"
+                  alt="Solaryaan" />
+                <img src="<%= basePath %>/pdfs/technical/velox.PNG" style="height: 55px; object-fit: contain;"
+                  alt="Velox" />
+                <img src="<%= basePath %>/pdfs/technical/vsole.PNG" style="height: 55px; object-fit: contain;"
+                  alt="Vsole" />
               </div>
             </div>
 
@@ -1135,8 +1147,10 @@
                 style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
                 Cables</h3>
               <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/polycab.PNG" style="height: 55px; object-fit: contain;" alt="Polycab" />
-                <img src="<%= basePath %>/pdfs/technical/rr.PNG" style="height: 55px; object-fit: contain;" alt="RR Kabel" />
+                <img src="<%= basePath %>/pdfs/technical/polycab.PNG" style="height: 55px; object-fit: contain;"
+                  alt="Polycab" />
+                <img src="<%= basePath %>/pdfs/technical/rr.PNG" style="height: 55px; object-fit: contain;"
+                  alt="RR Kabel" />
               </div>
             </div>
 
@@ -1145,8 +1159,10 @@
                 style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
                 Structure</h3>
               <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/hindustan.PNG" style="height: 55px; object-fit: contain;" alt="Hindustan" />
-                <img src="<%= basePath %>/pdfs/technical/aplapollo.PNG" style="height: 55px; object-fit: contain;" alt="APL Apollo" />
+                <img src="<%= basePath %>/pdfs/technical/hindustan.PNG" style="height: 55px; object-fit: contain;"
+                  alt="Hindustan" />
+                <img src="<%= basePath %>/pdfs/technical/aplapollo.PNG" style="height: 55px; object-fit: contain;"
+                  alt="APL Apollo" />
               </div>
             </div>
 
@@ -1155,7 +1171,8 @@
                 style="font-family:'Times New Roman', Times, serif; font-size:22px; margin: 0 0 15px 0; border-bottom: 1px solid #f0e6f2; padding-bottom: 8px; text-align: center;">
                 Earthing & Protection</h3>
               <div class="brand-boxes" style="display:flex; gap:40px; margin-top:15px; justify-content: center;">
-                <img src="<%= basePath %>/pdfs/technical/elink.png" style="height: 55px; object-fit: contain;" alt="E-Link" />
+                <img src="<%= basePath %>/pdfs/technical/elink.png" style="height: 55px; object-fit: contain;"
+                  alt="E-Link" />
               </div>
             </div>
           </div>
@@ -1426,19 +1443,21 @@
           <div class="kicker" style="margin-top: 30px;">11 · Project gallery</div>
           <h2>Solar projects for every scale.</h2>
           <div class="cards" style="display:flex; flex-wrap:wrap; justify-content:center; gap:12px;">
-            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img src="<%= basePath %>/pdfs/optimized_Residential.jpeg"
+            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
+                src="<%= basePath %>/pdfs/optimized_Residential.jpeg"
                 style="width:100%; height:120px; object-fit:cover;" />
               <div style="padding:14px;"><b>Residential</b>
                 <p>Elegant rooftop systems designed around household consumption.</p>
               </div>
             </div>
-            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img src="<%= basePath %>/pdfs/commercial.png"
-                style="width:100%; height:120px; object-fit:cover;" />
+            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
+                src="<%= basePath %>/pdfs/commercial.png" style="width:100%; height:120px; object-fit:cover;" />
               <div style="padding:14px;"><b>Commercial</b>
                 <p>Business energy solutions with performance-focused planning.</p>
               </div>
             </div>
-            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img src="<%= basePath %>/pdfs/optimized_Industrial.jpeg"
+            <div class="card" style="padding:0; overflow:hidden; width:calc(50% - 6px); box-sizing:border-box;"><img
+                src="<%= basePath %>/pdfs/optimized_Industrial.jpeg"
                 style="width:100%; height:120px; object-fit:cover;" />
               <div style="padding:14px;"><b>Industrial</b>
                 <p>High-capacity solar infrastructure for demanding operations.</p>
@@ -1496,7 +1515,7 @@
                   <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Customer signature
                   </div>
                   <div style="font-size:13px; color:var(--ink); font-weight:600;" data-name>
-                    <%= lead.fullName || "Customer" %>
+                    <%= lead.fullName || data.fullName ||  "Customer" %>
                   </div>
                 </div>
               </div>
@@ -1523,7 +1542,8 @@
                 <div
                   style="height: 100px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 10px;">
                   <img src="<%= basePath %>/pdfs/stemp.jpeg"
-                    style="max-height:100%; max-width:100%; object-fit:contain; margin-left: 10px;" /></div>
+                    style="max-height:100%; max-width:100%; object-fit:contain; margin-left: 10px;" />
+                </div>
                 <div style="border-top:1px solid #1c1620; padding-top:12px;">
                   <div style="font-size:12px; color:var(--ink); font-weight:600;">Company stamp</div>
                 </div>
@@ -1531,8 +1551,11 @@
             </div>
 
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--line);">
-              <h3 style="color: var(--p); font-size: 16px; font-weight: 700; margin-bottom: 15px; font-family: 'Times New Roman', Times, serif;">Required Documents for Registration</h3>
-              <ul style="list-style-type: disc; padding-left: 20px; color: var(--ink); font-weight: 600; font-size: 14px; line-height: 2; margin: 0;">
+              <h3
+                style="color: var(--p); font-size: 16px; font-weight: 700; margin-bottom: 15px; font-family: 'Times New Roman', Times, serif;">
+                Required Documents for Registration</h3>
+              <ul
+                style="list-style-type: disc; padding-left: 20px; color: var(--ink); font-weight: 600; font-size: 14px; line-height: 2; margin: 0;">
                 <li>Latest light bill</li>
                 <li>Latest tax bill</li>
                 <li>Cancel check</li>
@@ -1545,21 +1568,22 @@
             style="background:transparent;color:var(--ink);padding:40px;position:relative;display:flex;flex-direction:column;justify-content:flex-end">
             <h1 style="margin:15px 0 10px;font-size:38px;font-family:'Times New Roman', Times, serif; color:var(--p)">
               Thank you.</h1>
-           <div style="display:inline-flex; align-items:baseline; gap:10px;">
-    <h2 style="margin:0;font-size:24px;color:var(--ink);" data-name>
-        <%= lead.fullName || "Customer" %>
-    </h2>
+            <div style="display:inline-flex; align-items:baseline; gap:10px;">
+              <h2 style="margin:0;font-size:24px;color:var(--ink);" data-name>
+                <%= lead.fullName || data.fullName || "Customer" %>
+              </h2>
 
-    <span style="font-size:13px;color:var(--mut);">
-        Let’s create your way to a cleaner, more independent future.
-    </span>
-</div>
+              <span style="font-size:13px;color:var(--mut);">
+                Let’s create your way to a cleaner, more independent future.
+              </span>
+            </div>
             <div class="contact" style="margin-top:40px;line-height:1.7;color:var(--mut);font-size:11px">
               www.sms-enterprise.com<br>Residential · Commercial · Industrial Solar EPC<br>Design · Installation · AMC ·
               Consulting
               <hr style="border:0;border-top:1px solid var(--line);margin:15px 0" />
               <div style="display:flex;justify-content:space-between;color:var(--mut);font-size:10px;font-weight:600">
-                <span>SMS ENTERPRISE</span><span class="pageNum">09</span></div>
+                <span>SMS ENTERPRISE</span><span class="pageNum">09</span>
+              </div>
             </div>
           </div>
         </section>
@@ -1567,7 +1591,7 @@
     </main>
   </div>
   <script>
-    const $ = x => document.getElementById(x), $$ = x => document.querySelectorAll(x), money = n => '₹' + Math.round(n).toLocaleString('en-IN'), compact = n => { if (n >= 100000) return '₹' + (n / 100000).toFixed(n >= 1000000 ? 1 : 2) + 'L'; if (n >= 1000) return '₹' + (n / 1000).toFixed(1) + 'K'; return money(n); }; let pages = [...document.querySelectorAll('.page')]; pages.forEach((p, i) => { let num = p.querySelector('.pageNum'); if (num) num.textContent = (i + 1).toString().padStart(2, '0') }); $('nav').innerHTML = pages.map((_, i) => `<button data-i="${i}">${i + 1}</button>`).join(''); function show(i) { pages.forEach((p, x) => p.classList.toggle('active', x === i)); $$('#nav button').forEach((b, x) => b.classList.toggle('active', x === i)); window.scrollTo({ top: 0, behavior: 'smooth' }) } $$('#nav button').forEach(b => b.onclick = () => show(+b.dataset.i)); function set(s, v) { $$(s).forEach(e => e.textContent = v) } function calc() { let s = +$('size').value || 0, w = +$('watt').value || 1, r = +$('rate').value || 0, g = +$('gross').value || 0, sub = +$('subsidy').value || 0, loan = +$('loan').value || 0, bill = +$('bill').value || 0, pan = Math.ceil(s * 1000 / w), daily = s * 4.5, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100); let gen25 = 0, cGen = ann, cs = [0, 0, 0, 0], ts = 0, cRate = r; for (let i = 1; i <= 25; i++) { gen25 += cGen; let ys = cGen * cRate; ts += ys; if (i === 1) cs[0] = ts; if (i === 5) cs[1] = ts; if (i === 10) cs[2] = ts; if (i === 25) cs[3] = ts; cGen *= 0.995; cRate *= 1.03; } set('[data-name]', $('name').value || '<%= lead.fullName || "Customer" %>'); set('[data-proposal]', $('proposal').value || '<%= lead.leadrefrance || "" %>'); set('[data-exec]', $('exec').value || '<%= lead.assignName || "Sales Executive" %>'); $('coverSize').textContent = s + ' KW On-Grid Solar System'; set('[data-size]', s + ' KW'); set('[data-module]', $('module').value || '<%= quotation.solarModule || "-" %>'); set('[data-inverter]', $('inverter').value || '<%= quotation.inverter || "-" %>'); set('[data-watt]', w); set('[data-panels]', pan + ' × ' + w + ' W'); set('[data-area]', $('roof').value.replace(' Roof', '') + ' · ' + area.toLocaleString('en-IN') + ' sq ft'); set('[data-daily]', daily.toFixed(1)); set('[data-monthly]', Math.round(mon).toLocaleString('en-IN')); set('[data-annual]', Math.round(ann).toLocaleString('en-IN')); set('[data-gen25]', Math.round(gen25 / 1000) + 'k'); set('[data-saving]', money(save)); set('[data-annualsave]', money(annsave)); set('[data-save25]', compact(cs[3])); set('[data-gross]', money(g)); set('[data-subsidy]', money(sub)); set('[data-loan]', money(loan)); set('[data-custamt]', money(pay)); set('[data-payable]', money(g)); set('[data-roi]', roi.toFixed(1) + '%'); set('[data-payback]', pb.toFixed(1) + ' yrs'); let co2 = ann * 0.82; set('[data-co2]', (co2 / 1000).toFixed(1) + ' t'); set('[data-trees]', Math.round(co2 / 22)); set('[data-coal]', (ann * 0.70 / 1000).toFixed(1) + ' t'); set('[data-cars]', (co2 / 4600).toFixed(1)); if ($('bar1')) { $('bar1').setAttribute('data-v', compact(cs[0])); $('bar5').setAttribute('data-v', compact(cs[1])); $('bar10').setAttribute('data-v', compact(cs[2])); $('bar25').setAttribute('data-v', compact(cs[3])); let mb = cs[3] || 1; $('bar1').style.height = Math.max(15, (cs[0] / mb) * 100) + '%'; $('bar5').style.height = Math.max(15, (cs[1] / mb) * 100) + '%'; $('bar10').style.height = Math.max(15, (cs[2] / mb) * 100) + '%'; $('bar25').style.height = '100%'; } } $$('input,select').forEach(x => x.addEventListener('input', calc)); $('today').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); if ($('today2')) $('today2').textContent = $('today').textContent; calc(); show(0);
+    const $ = x => document.getElementById(x), $$ = x => document.querySelectorAll(x), money = n => '₹' + Math.round(n).toLocaleString('en-IN'), compact = n => { if (n >= 100000) return '₹' + (n / 100000).toFixed(n >= 1000000 ? 1 : 2) + 'L'; if (n >= 1000) return '₹' + (n / 1000).toFixed(1) + 'K'; return money(n); }; let pages = [...document.querySelectorAll('.page')]; pages.forEach((p, i) => { let num = p.querySelector('.pageNum'); if (num) num.textContent = (i + 1).toString().padStart(2, '0') }); $('nav').innerHTML = pages.map((_, i) => `<button data-i="${i}">${i + 1}</button>`).join(''); function show(i) { pages.forEach((p, x) => p.classList.toggle('active', x === i)); $$('#nav button').forEach((b, x) => b.classList.toggle('active', x === i)); window.scrollTo({ top: 0, behavior: 'smooth' }) } $$('#nav button').forEach(b => b.onclick = () => show(+b.dataset.i)); function set(s, v) { $$(s).forEach(e => e.textContent = v) } function calc() { let s = +$('size').value || 0, w = +$('watt').value || 1, r = +$('rate').value || 0, g = +$('gross').value || 0, sub = +$('subsidy').value || 0, loan = +$('loan').value || 0, bill = +$('bill').value || 0, pan = Math.ceil(s * 1000 / w), daily = s * 4.5, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100); let gen25 = 0, cGen = ann, cs = [0, 0, 0, 0], ts = 0, cRate = r; for (let i = 1; i <= 25; i++) { gen25 += cGen; let ys = cGen * cRate; ts += ys; if (i === 1) cs[0] = ts; if (i === 5) cs[1] = ts; if (i === 10) cs[2] = ts; if (i === 25) cs[3] = ts; cGen *= 0.995; cRate *= 1.03; } set('[data-name]', $('name').value || '<%= lead.fullName || data.fullName || "Customer" %>'); set('[data-proposal]', $('proposal').value || '<%= lead.leadrefrance || "" %>'); set('[data-exec]', $('exec').value || '<%= lead.assignName || "Sales Executive" %>'); $('coverSize').textContent = s + ' KW On-Grid Solar System'; set('[data-size]', s + ' KW'); set('[data-module]', $('module').value || '<%= quotation.solarModule || "-" %>'); set('[data-inverter]', $('inverter').value || '<%= quotation.inverter || "-" %>'); set('[data-watt]', w); set('[data-panels]', pan + ' × ' + w + ' W'); set('[data-area]', $('roof').value.replace(' Roof', '') + ' · ' + area.toLocaleString('en-IN') + ' sq ft'); set('[data-daily]', daily.toFixed(1)); set('[data-monthly]', Math.round(mon).toLocaleString('en-IN')); set('[data-annual]', Math.round(ann).toLocaleString('en-IN')); set('[data-gen25]', Math.round(gen25 / 1000) + 'k'); set('[data-saving]', money(save)); set('[data-annualsave]', money(annsave)); set('[data-save25]', compact(cs[3])); set('[data-gross]', money(g)); set('[data-subsidy]', money(sub)); set('[data-loan]', money(loan)); set('[data-custamt]', money(pay)); set('[data-payable]', money(g)); set('[data-roi]', roi.toFixed(1) + '%'); set('[data-payback]', pb.toFixed(1) + ' yrs'); let co2 = ann * 0.82; set('[data-co2]', (co2 / 1000).toFixed(1) + ' t'); set('[data-trees]', Math.round(co2 / 22)); set('[data-coal]', (ann * 0.70 / 1000).toFixed(1) + ' t'); set('[data-cars]', (co2 / 4600).toFixed(1)); if ($('bar1')) { $('bar1').setAttribute('data-v', compact(cs[0])); $('bar5').setAttribute('data-v', compact(cs[1])); $('bar10').setAttribute('data-v', compact(cs[2])); $('bar25').setAttribute('data-v', compact(cs[3])); let mb = cs[3] || 1; $('bar1').style.height = Math.max(15, (cs[0] / mb) * 100) + '%'; $('bar5').style.height = Math.max(15, (cs[1] / mb) * 100) + '%'; $('bar10').style.height = Math.max(15, (cs[2] / mb) * 100) + '%'; $('bar25').style.height = '100%'; } } $$('input,select').forEach(x => x.addEventListener('input', calc)); $('today').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); if ($('today2')) $('today2').textContent = $('today').textContent; calc(); show(0);
   </script>
   <script>
     oldInverterField.outerHTML = '<div class="field"><label>Inverter product</label><select id="inverter"><option>Sungrow · SG5.0RS</option><option>GoodWe · GW5000D-NS</option><option>Solax · X1-5.0-T-D</option><option>Havells · Enviro GTi 5 kW</option></select></div>';
@@ -1580,14 +1604,14 @@
     /* SMS Enterprise approved variable product catalogue (Dynamic from Backend) */
     <% 
       const getOptionsHTML = (key, defaultOptions) => {
-        if (!quotationOptions || quotationOptions.length === 0) return defaultOptions;
-        const options = quotationOptions.filter(o => o.key === key);
-        if (options.length === 0) return defaultOptions;
-        return options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
-      };
+      if (!quotationOptions || quotationOptions.length === 0) return defaultOptions;
+      const options = quotationOptions.filter(o => o.key === key);
+      if (options.length === 0) return defaultOptions;
+      return options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
+    };
     %>
-    
-    $('module').innerHTML = `<%- getOptionsHTML('module', '<option value="Adani | N-Type TOPCon Bifacial | 540">Adani · N-Type TOPCon Bifacial · 540 W</option><option value="Waaree | N-Type TOPCon Bifacial | 550">Waaree · N-Type TOPCon Bifacial · 550 W</option><option value="Pahal | Mono PERC Half-Cut | 540">Pahal · Mono PERC Half-Cut · 540 W</option><option value="Goldi | N-Type TOPCon | 550">Goldi · N-Type TOPCon · 550 W</option><option value="Rayzon | N-Type TOPCon Bifacial | 575">Rayzon · N-Type TOPCon Bifacial · 575 W</option>') %>`;
+
+      $('module').innerHTML = `<%- getOptionsHTML('module', '<option value="Adani | N-Type TOPCon Bifacial | 540">Adani · N-Type TOPCon Bifacial · 540 W</option><option value="Waaree | N-Type TOPCon Bifacial | 550">Waaree · N-Type TOPCon Bifacial · 550 W</option><option value="Pahal | Mono PERC Half-Cut | 540">Pahal · Mono PERC Half-Cut · 540 W</option><option value="Goldi | N-Type TOPCon | 550">Goldi · N-Type TOPCon · 550 W</option><option value="Rayzon | N-Type TOPCon Bifacial | 575">Rayzon · N-Type TOPCon Bifacial · 575 W</option>') %>`;
     $('inverter').innerHTML = `<%- getOptionsHTML('inverter', '<option>Velox · On-Grid Inverter</option><option>Solaryaan · On-Grid Inverter</option>') %>`;
     $('structure').innerHTML = `<%- getOptionsHTML('structure', '<option>Hindustaar Solar Mounting Structure</option>') %>`;
     $('dcdb').innerHTML = `<%- getOptionsHTML('dcdb', '<option>Simens DCDB with Type II SPD</option>') %>`;
@@ -1595,7 +1619,7 @@
     $('roof').closest('.field').insertAdjacentHTML('beforebegin', '<div class="field"><label>Solar cable product</label><select id="cables">' + `<%- getOptionsHTML('cables', '<option>Polycab Solar DC Cable & AC Cable</option>') %>` + '</select></div>');
     pages[4].querySelector('tbody').insertAdjacentHTML('beforeend', '<tr><td><b>Solar cables</b></td><td data-cables></td><td>UV-resistant solar DC / AC cable</td></tr>');
     function refreshProducts() { const moduleParts = $('module').value.split(' | '); $('watt').value = moduleParts.length > 2 ? moduleParts[2] : ($('watt').value || 1); calc(); set('[data-module]', moduleParts.length > 2 ? moduleParts[0] + ' · ' + moduleParts[1] + ' · ' + moduleParts[2] + ' W' : $('module').value); set('[data-inverter]', $('inverter').value); set('[data-structure]', $('structure').value); set('[data-dcdb]', $('dcdb').value); set('[data-acdb]', $('acdb').value); set('[data-cables]', $('cables').value) }
-    ['module', 'inverter', 'structure', 'dcdb', 'acdb', 'cables'].forEach(id => { if($(id)) $(id).addEventListener('change', refreshProducts); });
+    ['module', 'inverter', 'structure', 'dcdb', 'acdb', 'cables'].forEach(id => { if ($(id)) $(id).addEventListener('change', refreshProducts); });
     refreshProducts();
   </script>
   <script>
