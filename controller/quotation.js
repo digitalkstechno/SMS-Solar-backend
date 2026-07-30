@@ -107,6 +107,7 @@ const generatePdfBuffer = async (quotation, lead) => {
     const html = await ejs.renderFile(templatePath, {
       quotation: mergedQuotation,
       lead: mergedLead,
+      data: mergedLead,
       qrBase64,
       logoBase64,
       process: process,
