@@ -896,22 +896,22 @@
     <main class="workspace">
       <div id="injectedData" style="display:none;">
         <input id="size"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 5 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('size'))?.values[0] || 0 %>" />
         <input id="watt"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 540 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('module w'))?.values[0] || 0 %>" />
         <input id="rate"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 8 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('rate'))?.values[0] || 0 %>" />
         <input id="gross"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 325000 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('gross'))?.values[0] || 0 %>" />
         <input id="subsidy"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 78000 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 0 %>" />
         <input id="loan"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
         <input id="bill"
-          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 6500 %>" />
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 0 %>" />
         <input id="name" value="<%= lead.fullName || 'Customer' %>" />
         <input id="proposal" value="<%= lead.leadrefrance || 'N/A' %>" />
-        <input id="exec" value="<%= lead.assignName || 'Sales Executive' %>" />
+        <input id="exec" value="<%= lead.assignName || lead.assignedTo?.fullName || 'Sales Executive' %>" />
         <input id="module" value="<%= quotation.solarModule %>" />
         <input id="inverter" value="<%= quotation.inverter %>" />
         <input id="structure"
@@ -1004,7 +1004,7 @@
                   style="border-left:2px solid #e8dfea; padding-left:30px; display:flex; flex-direction:column; gap:4px;">
                   <div style="color:#766d7b; font-size:12px; font-weight:600;"><span id="today"></span></div>
                   <div style="color:#766d7b; font-size:12px;">Prepared by <b data-exec style="color:#1c1620;">
-                      <%= lead.assignName || "Sales Executive" %>
+                      <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
                     </b></div>
                   <div style="color:#1c1620; font-size:13px; font-weight:800;">
                     <%= lead.assignContact || "" %>
@@ -1505,10 +1505,10 @@
                   <div style="font-size:12px; color:var(--ink); font-weight:600; margin-bottom:15px;">Company
                     representative</div>
                   <div style="font-size:13px; color:var(--ink); font-weight:600;" data-exec>
-                    <%= lead.assignName || "Sales Executive" %>
+                    <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
                   </div>
                   <div style="font-size:14px; color:var(--ink); font-weight:800; margin-top:3px;" data-exec-contact>
-                    <%= lead.assignContacts || "" %>
+                    <%= lead.assignContact || "" %>
                   </div>
                 </div>
               </div>

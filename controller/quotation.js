@@ -5,6 +5,7 @@ const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const User = require('../model/user');
 const QuotationOption = require('../model/QuotationOption');
+const Lead = require('../model/lead');
 
 let globalBrowser = null;
 const getBrowser = async () => {
@@ -28,14 +29,25 @@ const generatePdfBuffer = async (quotation, lead) => {
       contact: '',
       assignContact: ''
     };
-    
-    const defaultQuotation = {
-      solarModule: '',
-      inverter: '',
-      rows: []
-    };
 
-    const mergedLead = { ...defaultLead, ...(lead || {}) };
+    let leadData = lead || {};
+    if (typeof leadData === 'string') {
+      try {
+        const dbLead = await Lead.findById(leadData);
+        if (dbLead) leadData = dbLead.toObject();
+      } catch (err) {
+        console.error("Error fetching lead for quotation:", err);
+      }
+    } else if (leadData && typeof leadData === 'object' && !leadData.fullName && leadData._id) {
+      try {
+        const dbLead = await Lead.findById(leadData._id);
+        if (dbLead) leadData = { ...dbLead.toObject(), ...leadData };
+      } catch (err) {
+        console.error("Error fetching lead for quotation:", err);
+      }
+    }
+
+    const mergedLead = { ...defaultLead, ...leadData };
     
     if (mergedLead.assignedTo) {
       try {
@@ -52,6 +64,12 @@ const generatePdfBuffer = async (quotation, lead) => {
         console.error("Error fetching user details for quotation:", err);
       }
     }
+
+    const defaultQuotation = {
+      solarModule: '',
+      inverter: '',
+      rows: []
+    };
     const mergedQuotation = { ...defaultQuotation, ...(quotation || {}) };
     if (!Array.isArray(mergedQuotation.rows)) {
       mergedQuotation.rows = [];
@@ -127,8 +145,9 @@ const generatePdfBuffer = async (quotation, lead) => {
 
 exports.generateQuotation = async (req, res) => {
   try {
-    const { quotation, lead } = req.body;
-    const pdfBuffer = await generatePdfBuffer(quotation, lead);
+    const { quotation, lead, data } = req.body;
+    const actualLead = lead || data;
+    const pdfBuffer = await generatePdfBuffer(quotation, actualLead);
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=quotation.pdf');
@@ -143,12 +162,13 @@ exports.generateQuotation = async (req, res) => {
 
 exports.sendWhatsAppQuotation = async (req, res) => {
   try {
-    const { lead, quotation } = req.body;
-    if (!lead || !lead.contact) {
+    const { lead, quotation, data } = req.body;
+    const actualLead = lead || data;
+    if (!actualLead || !actualLead.contact) {
       return res.status(400).json({ success: false, message: 'Lead contact number is required' });
     }
 
-    const pdfBuffer = await generatePdfBuffer(quotation, lead);
+    const pdfBuffer = await generatePdfBuffer(quotation, actualLead);
     
     // Save to public folder
     const publicDir = path.join(__dirname, '../public');
@@ -156,7 +176,7 @@ exports.sendWhatsAppQuotation = async (req, res) => {
     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
     if (!fs.existsSync(pdfsDir)) fs.mkdirSync(pdfsDir);
     
-    const filename = `quotation_${lead._id || Date.now()}.pdf`;
+    const filename = `quotation_${actualLead._id || Date.now()}.pdf`;
     const filePath = path.join(pdfsDir, filename);
     fs.writeFileSync(filePath, pdfBuffer);
 
