@@ -4,16 +4,30 @@ const path = require("path");
 let isInitialized = false;
 
 try {
-  const serviceAccountPath = path.resolve(__dirname, "../config/firebase-service-account.json");
-  const serviceAccount = require(serviceAccountPath);
+  let credential;
+
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    credential = admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'), 
+    });
+    console.log("Firebase initialized using .env variables.");
+  } else {
+    const serviceAccountPath = path.resolve(__dirname, "../config/firebase-service-account.json");
+    const serviceAccount = require(serviceAccountPath);
+    credential = admin.credential.cert(serviceAccount);
+    console.log("Firebase initialized using local config file.");
+  }
 
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: credential,
   });
+  
   isInitialized = true;
   console.log("Firebase Admin Initialized successfully.");
 } catch (error) {
-  console.error("Failed to initialize Firebase Admin. Please check config/firebase-service-account.json", error.message);
+  console.error("Failed to initialize Firebase Admin. Please check credentials or config file.", error.message);
 }
 
 const sendPushNotification = async (token, title, body, data = {}) => {
