@@ -42,6 +42,9 @@ let StaffSchema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
     }],
+    fcmToken: {
+      type: String,
+    },
   },
   { timestamps: true },
 );

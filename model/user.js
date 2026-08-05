@@ -35,6 +35,9 @@ let UserSchema = new Schema(
     city: [{
       type: String,
     }],
+    fcmToken: {
+      type: String,
+    },
 
   },
   { timestamps: true },

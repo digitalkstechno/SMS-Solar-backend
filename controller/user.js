@@ -47,7 +47,7 @@ exports.createUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, fcmToken } = req.body;
     let userverify = await USER.findOne({ email });
     if (!userverify) {
       throw new Error("Invalid Email or password");
@@ -60,6 +60,12 @@ exports.loginUser = async (req, res) => {
     if (String(decryptedPassword) !== password) {
       throw new Error("Invalid password");
     }
+    
+    if (fcmToken) {
+      userverify.fcmToken = fcmToken;
+      await userverify.save();
+    }
+
     let token = jwt.sign({ id: userverify._id }, process.env.JWT_SECRET_KEY, { expiresIn: "24h" });
     return res.status(200).json({
       status: "Success",

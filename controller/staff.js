@@ -54,7 +54,7 @@ exports.createStaff = async (req, res) => {
 
 exports.loginStaff = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, fcmToken } = req.body;
     let staffverify = await STAFF.findOne({ email }).populate("role").populate("teams").populate("organizations");
     
     if (staffverify) {
@@ -65,6 +65,12 @@ exports.loginStaff = async (req, res) => {
       if (String(decryptedPassword) !== password) {
         throw new Error("Invalid password");
       }
+      
+      if (fcmToken) {
+        staffverify.fcmToken = fcmToken;
+        await staffverify.save();
+      }
+
       let token = jwt.sign({ id: staffverify._id }, process.env.JWT_SECRET_KEY, { expiresIn: "24h" });
       return res.status(200).json({
         status: "Success",
@@ -84,6 +90,12 @@ exports.loginStaff = async (req, res) => {
       if (String(decryptedPassword) !== password) {
         throw new Error("Invalid password");
       }
+      
+      if (fcmToken) {
+        userverify.fcmToken = fcmToken;
+        await userverify.save();
+      }
+
       let token = jwt.sign({ id: userverify._id }, process.env.JWT_SECRET_KEY, { expiresIn: "24h" });
       return res.status(200).json({
         status: "Success",
