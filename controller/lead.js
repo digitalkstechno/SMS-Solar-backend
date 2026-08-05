@@ -15,8 +15,9 @@ const sanitizeObjectId = (id) => {
 };
 
 exports.createLead = async (req, res) => {
+  let leadData = {};
   try {
-    const leadData = { ...req.body };
+    leadData = { ...req.body };
 
     // Sanitize ObjectIds
     leadData.leadStatus = sanitizeObjectId(leadData.leadStatus);
