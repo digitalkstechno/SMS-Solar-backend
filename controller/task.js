@@ -110,6 +110,16 @@ exports.createTask = async (req, res) => {
         } catch(err) {
           console.error("Socket emit error:", err);
         }
+
+        // Send FCM Push Notification to assigned users
+        const { sendPushNotificationToUsers } = require("../utils/fcmHelper");
+        const recipientIds = notifications.map(n => n.recipient);
+        await sendPushNotificationToUsers(
+          recipientIds,
+          "New Task Assigned",
+          `You have been assigned to a new task: ${task.subject}`,
+          { type: "task", taskId: String(task._id) }
+        );
       }
     }
 
@@ -239,6 +249,15 @@ exports.updateTask = async (req, res) => {
       } catch(err) {
         console.error("Socket emit error:", err);
       }
+
+      // Send FCM Push Notification to newly assigned users
+      const { sendPushNotificationToUsers } = require("../utils/fcmHelper");
+      await sendPushNotificationToUsers(
+        addedUsers,
+        "Task Assigned",
+        `You have been assigned to the task: ${updated.subject}`,
+        { type: "task", taskId: String(updated._id) }
+      );
     }
 
     return res.status(200).json({ status: "Success", message: "Task updated successfully", data: updated });

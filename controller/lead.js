@@ -69,26 +69,13 @@ exports.createLead = async (req, res) => {
         createdAt: new Date().toISOString()
       });
 
-      const STAFF = require("../model/staff");
-      const USER = require("../model/user");
-      const { sendPushNotification } = require("../utils/fcmHelper");
-      
-      let assignedPerson = await STAFF.findById(leadDetails.assignedTo);
-      if (!assignedPerson) {
-        assignedPerson = await USER.findById(leadDetails.assignedTo);
-      }
-      
-      if (assignedPerson && assignedPerson.fcmToken) {
-        console.log("Sending push notification to token:", assignedPerson.fcmToken);
-        await sendPushNotification(
-          assignedPerson.fcmToken,
-          "New Lead Assigned",
-          `You have been assigned to a new lead: ${leadDetails.fullName}`,
-          { type: "lead", leadId: String(leadDetails._id) }
-        );
-      } else {
-        console.log("No fcmToken found for assigned user:", leadDetails.assignedTo);
-      }
+      const { sendPushNotificationToUser } = require("../utils/fcmHelper");
+      await sendPushNotificationToUser(
+        leadDetails.assignedTo,
+        "New Lead Assigned",
+        `You have been assigned to a new lead: ${leadDetails.fullName}`,
+        { type: "lead", leadId: String(leadDetails._id) }
+      );
     }
 
     const populatedLead = await LEAD.findById(leadDetails._id).populate("assignedTo", "fullName email phone fcmToken");
@@ -525,6 +512,14 @@ exports.leadUpdate = async (req, res) => {
         isRead: false,
         createdAt: new Date().toISOString()
       });
+
+      const { sendPushNotificationToUser } = require("../utils/fcmHelper");
+      await sendPushNotificationToUser(
+        newStaff,
+        "Lead Assigned",
+        `You have been assigned to the lead: ${updatedLeads.fullName}`,
+        { type: "lead", leadId: String(updatedLeads._id) }
+      );
     }
     return res.status(200).json({
       status: "Success",

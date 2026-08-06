@@ -43,13 +43,41 @@ const sendPushNotification = async (token, title, body, data = {}) => {
     return;
   }
 
+  // Ensure all values in data object are strings for FCM compatibility
+  const stringData = {};
+  if (data && typeof data === 'object') {
+    Object.keys(data).forEach((key) => {
+      if (data[key] !== undefined && data[key] !== null) {
+        stringData[key] = String(data[key]);
+      }
+    });
+  }
+
   const message = {
     notification: {
       title,
       body,
     },
-    data,
+    data: stringData,
     token,
+    android: {
+      priority: "high",
+      notification: {
+        sound: "default",
+        channelId: "default",
+        priority: "high",
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+      },
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+          contentAvailable: true,
+        },
+      },
+    },
   };
 
   try {
@@ -57,10 +85,45 @@ const sendPushNotification = async (token, title, body, data = {}) => {
     console.log("Successfully sent push notification:", response);
     return response;
   } catch (error) {
-    console.error("Error sending push notification:", error);
+    console.error("Error sending push notification to token (" + token + "):", error.message || error);
+  }
+};
+
+const sendPushNotificationToUser = async (userId, title, body, data = {}) => {
+  if (!userId) return;
+  try {
+    const STAFF = require("../model/staff");
+    const USER = require("../model/user");
+
+    let person = await STAFF.findById(userId).select("fcmToken fullName email");
+    if (!person) {
+      person = await USER.findById(userId).select("fcmToken fullName email");
+    }
+
+    if (person && person.fcmToken) {
+      console.log(`Sending FCM push notification to user ${person.fullName || userId} (token: ${person.fcmToken})`);
+      return await sendPushNotification(person.fcmToken, title, body, data);
+    } else {
+      console.log(`No FCM token found for recipient user: ${userId}`);
+    }
+  } catch (err) {
+    console.error("Error in sendPushNotificationToUser:", err.message || err);
+  }
+};
+
+const sendPushNotificationToUsers = async (userIds, title, body, data = {}) => {
+  if (!Array.isArray(userIds) || userIds.length === 0) return;
+
+  // Filter out duplicates and invalid IDs
+  const uniqueUserIds = [...new Set(userIds.map((id) => String(id || '')).filter(Boolean))];
+
+  for (const userId of uniqueUserIds) {
+    await sendPushNotificationToUser(userId, title, body, data);
   }
 };
 
 module.exports = {
   sendPushNotification,
+  sendPushNotificationToUser,
+  sendPushNotificationToUsers,
 };

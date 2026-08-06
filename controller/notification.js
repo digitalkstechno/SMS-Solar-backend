@@ -62,3 +62,34 @@ exports.markAllAsRead = async (req, res) => {
     });
   }
 };
+
+exports.updateFcmToken = async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) {
+      return res.status(400).json({
+        status: "Fail",
+        message: "fcmToken is required",
+      });
+    }
+
+    const userId = req.user._id;
+    const STAFF = require("../model/staff");
+    const USER = require("../model/user");
+
+    let updated = await STAFF.findByIdAndUpdate(userId, { fcmToken }, { new: true });
+    if (!updated) {
+      updated = await USER.findByIdAndUpdate(userId, { fcmToken }, { new: true });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "FCM token updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "Fail",
+      message: error.message,
+    });
+  }
+};

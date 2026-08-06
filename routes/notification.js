@@ -8,5 +8,6 @@ const router = express.Router();
 router.get("/my-notifications", authMiddleware, RC.getMyNotifications);
 router.put("/mark-all-read", authMiddleware, RC.markAllAsRead);
 router.put("/mark-read/:id", authMiddleware, RC.markAsRead);
+router.post("/update-fcm-token", authMiddleware, RC.updateFcmToken);
 
 module.exports = router;
