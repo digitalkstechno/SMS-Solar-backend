@@ -79,19 +79,24 @@ exports.createLead = async (req, res) => {
       }
       
       if (assignedPerson && assignedPerson.fcmToken) {
+        console.log("Sending push notification to token:", assignedPerson.fcmToken);
         await sendPushNotification(
           assignedPerson.fcmToken,
           "New Lead Assigned",
           `You have been assigned to a new lead: ${leadDetails.fullName}`,
           { type: "lead", leadId: String(leadDetails._id) }
         );
+      } else {
+        console.log("No fcmToken found for assigned user:", leadDetails.assignedTo);
       }
     }
+
+    const populatedLead = await LEAD.findById(leadDetails._id).populate("assignedTo", "fullName email phone fcmToken");
 
     return res.status(201).json({
       status: "Success",
       message: "Leads created successfully",
-      data: leadDetails,
+      data: populatedLead,
     });
   } catch (error) {
     if (leadData.attachments && leadData.attachments.length > 0) {
