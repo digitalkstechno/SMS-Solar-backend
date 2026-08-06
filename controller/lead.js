@@ -488,12 +488,35 @@ exports.leadUpdate = async (req, res) => {
       .populate("assignedTo")
       .populate("followUps.staff", "fullName email");
 
-    // 🔹 Status change handling
+    // 🔹 Status / Stage change handling (e.g. New Lead, Won, Lost, etc.)
     if (
       oldLeads.leadStatus?.toString() !== updatedLeads.leadStatus?.toString()
     ) {
       await decrementCount({ statusId: oldLeads.leadStatus });
       await incrementCount({ statusId: updatedLeads.leadStatus });
+
+      const statusName = updatedLeads.leadStatus?.name || "Updated Stage";
+      const recipientId = updatedLeads.assignedTo?._id || updatedLeads.assignedTo;
+
+      if (recipientId) {
+        await Notification.create({
+          recipient: recipientId,
+          title: "Lead Stage Changed",
+          message: `Lead "${updatedLeads.fullName}" stage changed to ${statusName}`,
+          type: "lead",
+          relatedId: updatedLeads._id,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+
+        const { sendPushNotificationToUser } = require("../utils/fcmHelper");
+        await sendPushNotificationToUser(
+          recipientId,
+          "Lead Stage Changed",
+          `Lead "${updatedLeads.fullName}" stage changed to ${statusName}`,
+          { type: "lead", leadId: String(updatedLeads._id), stage: String(statusName) }
+        );
+      }
     }
 
 

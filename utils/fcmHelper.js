@@ -34,17 +34,23 @@ try {
 
 const sendPushNotification = async (token, title, body, data = {}) => {
   if (!isInitialized) {
-    console.warn("FCM is not initialized. Skipping push notification.");
+    console.warn("[FCM WARNING] Firebase Admin is not initialized. Skipping push notification.");
     return;
   }
 
   if (!token) {
-    console.warn("No FCM token provided. Skipping push notification.");
+    console.warn("[FCM WARNING] No FCM token provided. Skipping push notification.");
     return;
   }
 
-  // Ensure all values in data object are strings for FCM compatibility
-  const stringData = {};
+  // Ensure title and body are also included in data payload for Flutter background handler compatibility
+  const stringData = {
+    title: String(title || ''),
+    body: String(body || ''),
+    message: String(title || ''),
+    content: String(body || ''),
+  };
+
   if (data && typeof data === 'object') {
     Object.keys(data).forEach((key) => {
       if (data[key] !== undefined && data[key] !== null) {
@@ -52,6 +58,10 @@ const sendPushNotification = async (token, title, body, data = {}) => {
       }
     });
   }
+
+  console.log(`[FCM DEBUG] Target Token: ${token}`);
+  console.log(`[FCM DEBUG] Title: "${title}" | Body: "${body}"`);
+  console.log(`[FCM DEBUG] Data Payload:`, stringData);
 
   const message = {
     notification: {
@@ -64,7 +74,7 @@ const sendPushNotification = async (token, title, body, data = {}) => {
       priority: "high",
       notification: {
         sound: "default",
-        channelId: "default",
+        channelId: "high_importance_channel",
         priority: "high",
         clickAction: "FLUTTER_NOTIFICATION_CLICK",
       },
@@ -82,10 +92,17 @@ const sendPushNotification = async (token, title, body, data = {}) => {
 
   try {
     const response = await getMessaging(app).send(message);
-    console.log("Successfully sent push notification:", response);
+    console.log(`[FCM SUCCESS] Push notification sent successfully! Response ID: ${response}`);
     return response;
   } catch (error) {
-    console.error("Error sending push notification to token (" + token + "):", error.message || error);
+    console.error(`[FCM ERROR] Failed to send push notification to token (${token}):`, error.message || error);
+    if (
+      error.code === 'messaging/invalid-registration-token' ||
+      error.code === 'messaging/registration-token-not-registered' ||
+      (error.message && error.message.includes('not a valid FCM registration token'))
+    ) {
+      console.warn(`[FCM WARNING] Token "${token}" is invalid or expired. The mobile app needs to re-register its FCM token via POST /v1/api/notification/update-fcm-token.`);
+    }
   }
 };
 
