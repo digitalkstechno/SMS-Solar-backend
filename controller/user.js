@@ -26,6 +26,8 @@ exports.createUser = async (req, res) => {
       status: status || "active",
       department: department,
       city: city,
+      createdBy: req.user ? req.user._id : undefined,
+      updatedBy: req.user ? req.user._id : undefined,
     };
 
     const UserDetails = await USER.create(userData);
@@ -137,6 +139,8 @@ exports.fetchAllUsers = async (req, res) => {
 
     const totalUsers = await USER.countDocuments(query);
     const usersData = await USER.find(query)
+      .populate("createdBy", "fullName email")
+      .populate("updatedBy", "fullName email")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
@@ -272,6 +276,10 @@ exports.userUpdate = async (req, res) => {
         deleteUploadedFile("images/UserProfileImages", oldUser.profileImage);
       }
       req.body.profileImage = await uploadToExternalService(req.file, "UserProfileImages");
+    }
+
+    if (req.user && req.user._id) {
+      req.body.updatedBy = req.user._id;
     }
 
     let updatedUser = await USER.findByIdAndUpdate(userID, req.body, {

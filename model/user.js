@@ -38,7 +38,14 @@ let UserSchema = new Schema(
     fcmToken: {
       type: String,
     },
-
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+    },
   },
   { timestamps: true },
 );
