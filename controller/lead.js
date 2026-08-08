@@ -8,6 +8,7 @@ const Notification = require("../model/notification");
 const ExcelJS = require("exceljs");
 const fs = require("fs");
 const { uploadToExternalService, deleteFileFromExternalService } = require("../utils/externalUploader");
+const { logActivity } = require("../utils/activityLogger");
 
 const sanitizeObjectId = (id) => {
   if (id === "" || id === "null" || id === "undefined" || id === null) return undefined;
@@ -52,6 +53,14 @@ exports.createLead = async (req, res) => {
     ];
 
     const leadDetails = await LEAD.create(leadData);
+
+    await logActivity(req, {
+      action: "CREATE",
+      module: "Lead",
+      entityId: leadDetails._id,
+      entityName: leadDetails.fullName || leadDetails.phone || "Lead",
+      details: { fullName: leadDetails.fullName, phone: leadDetails.phone, email: leadDetails.email },
+    });
 
     await incrementCount({
       statusId: leadDetails.leadStatus,
@@ -488,6 +497,18 @@ exports.leadUpdate = async (req, res) => {
       .populate("assignedTo")
       .populate("followUps.staff", "fullName email");
 
+    await logActivity(req, {
+      action: "UPDATE",
+      module: "Lead",
+      entityId: updatedLeads._id,
+      entityName: updatedLeads.fullName || updatedLeads.phone || "Lead",
+      details: {
+        oldName: oldLeads.fullName,
+        newName: updatedLeads.fullName,
+        updatedFields: Object.keys(updateData),
+      },
+    });
+
     // 🔹 Status / Stage change handling (e.g. New Lead, Won, Lost, etc.)
     if (
       oldLeads.leadStatus?.toString() !== updatedLeads.leadStatus?.toString()
@@ -583,6 +604,14 @@ exports.leadDelete = async (req, res) => {
     });
 
     await LEAD.findByIdAndDelete(leadId);
+
+    await logActivity(req, {
+      action: "DELETE",
+      module: "Lead",
+      entityId: leadId,
+      entityName: oldLead.fullName || oldLead.phone || "Lead",
+      details: { deletedLeadName: oldLead.fullName, phone: oldLead.phone, email: oldLead.email },
+    });
 
     return res.status(200).json({
       status: "Success",

@@ -4,6 +4,7 @@ const { encryptData, decryptData } = require("../utils/crypto");
 const { deleteUploadedFile } = require("../utils/fileHelper");
 const { uploadToExternalService, deleteFileFromExternalService } = require("../utils/externalUploader");
 const jwt = require("jsonwebtoken");
+const { logActivity } = require("../utils/activityLogger");
 
 exports.createUser = async (req, res) => {
   let profileImage = null;
@@ -28,6 +29,14 @@ exports.createUser = async (req, res) => {
     };
 
     const UserDetails = await USER.create(userData);
+
+    await logActivity(req, {
+      action: "CREATE",
+      module: "User",
+      entityId: UserDetails._id,
+      entityName: UserDetails.fullName,
+      details: { fullName, email, phone, status: UserDetails.status },
+    });
 
     return res.status(201).json({
       status: "Success",
@@ -268,6 +277,19 @@ exports.userUpdate = async (req, res) => {
     let updatedUser = await USER.findByIdAndUpdate(userID, req.body, {
       new: true,
     });
+
+    await logActivity(req, {
+      action: "UPDATE",
+      module: "User",
+      entityId: updatedUser._id,
+      entityName: updatedUser.fullName,
+      details: {
+        oldName: oldUser.fullName,
+        newName: updatedUser.fullName,
+        updatedFields: Object.keys(req.body),
+      },
+    });
+
     return res.status(200).json({
       status: "Success",
       message: "User updated successfully",
@@ -300,6 +322,14 @@ exports.userDelete = async (req, res) => {
       deleteUploadedFile("images/UserProfileImages", oldUser.profileImage);
     }
     await USER.findByIdAndDelete(userID);
+
+    await logActivity(req, {
+      action: "DELETE",
+      module: "User",
+      entityId: userID,
+      entityName: oldUser.fullName,
+      details: { deletedUserName: oldUser.fullName, email: oldUser.email },
+    });
 
     return res.status(200).json({
       status: "Success",

@@ -24,5 +24,6 @@ router.use("/analytics", require("./analytics"));
 router.use("/quotation", require("./quotation"));
 router.use("/quotation-options", require("./quotationOption"));
 router.use("/city", require("./city"));
+router.use("/activity-log", require("./activityLog"));
 
 module.exports = router;

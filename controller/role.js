@@ -1,9 +1,19 @@
 const ROLE = require("../model/role");
+const { logActivity } = require("../utils/activityLogger");
 
 exports.createRole = async (req, res, next) => {
   try {
     let roleDetails = req.body;
     let newRole = await ROLE.create(roleDetails);
+
+    await logActivity(req, {
+      action: "CREATE",
+      module: "Department",
+      entityId: newRole._id,
+      entityName: newRole.roleName,
+      details: { roleName: newRole.roleName, permissions: newRole.permissions },
+    });
+
     res.status(201).json({
       status: "Success",
       data: newRole,
@@ -83,6 +93,19 @@ exports.roleUpdate = async (req, res) => {
     let updatedRole = await ROLE.findByIdAndUpdate(roleId, req.body, {
       new: true,
     });
+
+    await logActivity(req, {
+      action: "UPDATE",
+      module: "Department",
+      entityId: updatedRole._id,
+      entityName: updatedRole.roleName,
+      details: {
+        oldName: oldRole.roleName,
+        newName: updatedRole.roleName,
+        updatedFields: Object.keys(req.body),
+      },
+    });
+
     return res.status(200).json({
       status: "Success",
       message: "Role updated successfully",
@@ -105,6 +128,14 @@ exports.roleDelete = async (req, res) => {
       throw new Error("Role not found");
     }
     await ROLE.findByIdAndDelete(roleId);
+
+    await logActivity(req, {
+      action: "DELETE",
+      module: "Department",
+      entityId: roleId,
+      entityName: oldRole.roleName,
+      details: { deletedRoleName: oldRole.roleName },
+    });
 
     return res.status(200).json({
       status: "Success",
