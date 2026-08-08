@@ -908,6 +908,10 @@
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('subsidy'))?.values[0] || 0 %>" />
         <input id="loan"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('loan'))?.values[0] || 0 %>" />
+        <input id="geda"
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('geda'))?.values[0] || '' %>" />
+        <input id="meter"
+          value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('meter'))?.values[0] || '' %>" />
         <input id="bill"
           value="<%= quotation.rows.find(r => (r.title||'').toLowerCase().includes('bill'))?.values[0] || 0 %>" />
         <input id="name" value="<%= lead.fullName || data.fullName || 'Customer' %>" />
@@ -1187,6 +1191,8 @@
               <div class="row"><span>Gross system amount</span><b data-gross>₹325,000</b></div>
               <div class="row"><span>Government subsidy</span><b data-subsidy>₹78,000</b></div>
               <div class="row"><span>Customer amount</span><b data-custamt>₹247,000</b></div>
+              <div class="row" id="row-geda" style="display:none;"><span>GEDA Registration</span><b data-geda>₹0</b></div>
+              <div class="row" id="row-meter" style="display:none;"><span>Meter Charge</span><b data-meter>₹0</b></div>
               <div class="row"><span>Annual savings</span><b data-annualsave>₹64,800</b></div>
               <div class="row"><span>25-year savings</span><b data-save25>₹16.2L</b></div>
             </div>
@@ -1591,7 +1597,84 @@
     </main>
   </div>
   <script>
-    const $ = x => document.getElementById(x), $$ = x => document.querySelectorAll(x), money = n => '₹' + Math.round(n).toLocaleString('en-IN'), compact = n => { if (n >= 100000) return '₹' + (n / 100000).toFixed(n >= 1000000 ? 1 : 2) + 'L'; if (n >= 1000) return '₹' + (n / 1000).toFixed(1) + 'K'; return money(n); }; let pages = [...document.querySelectorAll('.page')]; pages.forEach((p, i) => { let num = p.querySelector('.pageNum'); if (num) num.textContent = (i + 1).toString().padStart(2, '0') }); $('nav').innerHTML = pages.map((_, i) => `<button data-i="${i}">${i + 1}</button>`).join(''); function show(i) { pages.forEach((p, x) => p.classList.toggle('active', x === i)); $$('#nav button').forEach((b, x) => b.classList.toggle('active', x === i)); window.scrollTo({ top: 0, behavior: 'smooth' }) } $$('#nav button').forEach(b => b.onclick = () => show(+b.dataset.i)); function set(s, v) { $$(s).forEach(e => e.textContent = v) } function calc() { let s = +$('size').value || 0, w = +$('watt').value || 1, r = +$('rate').value || 0, g = +$('gross').value || 0, sub = +$('subsidy').value || 0, loan = +$('loan').value || 0, bill = +$('bill').value || 0, pan = Math.ceil(s * 1000 / w), daily = s * 4.5, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100); let gen25 = 0, cGen = ann, cs = [0, 0, 0, 0], ts = 0, cRate = r; for (let i = 1; i <= 25; i++) { gen25 += cGen; let ys = cGen * cRate; ts += ys; if (i === 1) cs[0] = ts; if (i === 5) cs[1] = ts; if (i === 10) cs[2] = ts; if (i === 25) cs[3] = ts; cGen *= 0.995; cRate *= 1.03; } set('[data-name]', $('name').value || '<%= lead.fullName || data.fullName || "Customer" %>'); set('[data-proposal]', $('proposal').value || '<%= lead.leadrefrance || "" %>'); set('[data-exec]', $('exec').value || '<%= lead.assignName || "Sales Executive" %>'); $('coverSize').textContent = s + ' KW On-Grid Solar System'; set('[data-size]', s + ' KW'); set('[data-module]', $('module').value || '<%= quotation.solarModule || "-" %>'); set('[data-inverter]', $('inverter').value || '<%= quotation.inverter || "-" %>'); set('[data-watt]', w); set('[data-panels]', pan + ' × ' + w + ' W'); set('[data-area]', $('roof').value.replace(' Roof', '') + ' · ' + area.toLocaleString('en-IN') + ' sq ft'); set('[data-daily]', daily.toFixed(1)); set('[data-monthly]', Math.round(mon).toLocaleString('en-IN')); set('[data-annual]', Math.round(ann).toLocaleString('en-IN')); set('[data-gen25]', Math.round(gen25 / 1000) + 'k'); set('[data-saving]', money(save)); set('[data-annualsave]', money(annsave)); set('[data-save25]', compact(cs[3])); set('[data-gross]', money(g)); set('[data-subsidy]', money(sub)); set('[data-loan]', money(loan)); set('[data-custamt]', money(pay)); set('[data-payable]', money(g)); set('[data-roi]', roi.toFixed(1) + '%'); set('[data-payback]', pb.toFixed(1) + ' yrs'); let co2 = ann * 0.82; set('[data-co2]', (co2 / 1000).toFixed(1) + ' t'); set('[data-trees]', Math.round(co2 / 22)); set('[data-coal]', (ann * 0.70 / 1000).toFixed(1) + ' t'); set('[data-cars]', (co2 / 4600).toFixed(1)); if ($('bar1')) { $('bar1').setAttribute('data-v', compact(cs[0])); $('bar5').setAttribute('data-v', compact(cs[1])); $('bar10').setAttribute('data-v', compact(cs[2])); $('bar25').setAttribute('data-v', compact(cs[3])); let mb = cs[3] || 1; $('bar1').style.height = Math.max(15, (cs[0] / mb) * 100) + '%'; $('bar5').style.height = Math.max(15, (cs[1] / mb) * 100) + '%'; $('bar10').style.height = Math.max(15, (cs[2] / mb) * 100) + '%'; $('bar25').style.height = '100%'; } } $$('input,select').forEach(x => x.addEventListener('input', calc)); $('today').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); if ($('today2')) $('today2').textContent = $('today').textContent; calc(); show(0);
+    const $ = x => document.getElementById(x), $$ = x => document.querySelectorAll(x), money = n => '₹' + Math.round(n).toLocaleString('en-IN'), compact = n => { if (n >= 100000) return '₹' + (n / 100000).toFixed(n >= 1000000 ? 1 : 2) + 'L'; if (n >= 1000) return '₹' + (n / 1000).toFixed(1) + 'K'; return money(n); };
+    let pages = [...document.querySelectorAll('.page')];
+    pages.forEach((p, i) => { let num = p.querySelector('.pageNum'); if (num) num.textContent = (i + 1).toString().padStart(2, '0') });
+    if ($('nav')) $('nav').innerHTML = pages.map((_, i) => `<button data-i="${i}">${i + 1}</button>`).join('');
+    function show(i) { pages.forEach((p, x) => p.classList.toggle('active', x === i)); $$('#nav button').forEach((b, x) => b.classList.toggle('active', x === i)); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+    $$('#nav button').forEach(b => b.onclick = () => show(+b.dataset.i));
+    function set(s, v) { $$(s).forEach(e => e.textContent = v) }
+
+    function calc() {
+      let s = +$('size').value || 0, w = +$('watt').value || 1, r = +$('rate').value || 0, g = +$('gross').value || 0, sub = +$('subsidy').value || 0, loan = +$('loan').value || 0, bill = +$('bill').value || 0;
+      let gedaVal = ($('geda') ? $('geda').value.trim() : ''), meterVal = ($('meter') ? $('meter').value.trim() : '');
+      let pan = Math.ceil(s * 1000 / w), daily = s * 4.5, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100);
+      let gen25 = 0, cGen = ann, cs = [0, 0, 0, 0], ts = 0, cRate = r;
+      for (let i = 1; i <= 25; i++) { gen25 += cGen; let ys = cGen * cRate; ts += ys; if (i === 1) cs[0] = ts; if (i === 5) cs[1] = ts; if (i === 10) cs[2] = ts; if (i === 25) cs[3] = ts; cGen *= 0.995; cRate *= 1.03; }
+      set('[data-name]', $('name').value || '<%= lead.fullName || data.fullName || "Customer" %>');
+      set('[data-proposal]', $('proposal').value || '<%= lead.leadrefrance || "" %>');
+      set('[data-exec]', $('exec').value || '<%= lead.assignName || "Sales Executive" %>');
+      if ($('coverSize')) $('coverSize').textContent = s + ' KW On-Grid Solar System';
+      set('[data-size]', s + ' KW');
+      set('[data-module]', $('module').value || '<%= quotation.solarModule || "-" %>');
+      set('[data-inverter]', $('inverter').value || '<%= quotation.inverter || "-" %>');
+      set('[data-watt]', w);
+      set('[data-panels]', pan + ' × ' + w + ' W');
+      set('[data-area]', $('roof').value.replace(' Roof', '') + ' · ' + area.toLocaleString('en-IN') + ' sq ft');
+      set('[data-daily]', daily.toFixed(1));
+      set('[data-monthly]', Math.round(mon).toLocaleString('en-IN'));
+      set('[data-annual]', Math.round(ann).toLocaleString('en-IN'));
+      set('[data-gen25]', Math.round(gen25 / 1000) + 'k');
+      set('[data-saving]', money(save));
+      set('[data-annualsave]', money(annsave));
+      set('[data-save25]', compact(cs[3]));
+      set('[data-gross]', money(g));
+      set('[data-subsidy]', money(sub));
+      set('[data-loan]', money(loan));
+      set('[data-custamt]', money(pay));
+      set('[data-payable]', money(g));
+      set('[data-roi]', roi.toFixed(1) + '%');
+      set('[data-payback]', pb.toFixed(1) + ' yrs');
+
+      if ($('row-geda')) {
+        if (gedaVal) {
+          $('row-geda').style.display = 'flex';
+          set('[data-geda]', isNaN(+gedaVal) ? gedaVal : money(+gedaVal));
+        } else {
+          $('row-geda').style.display = 'none';
+        }
+      }
+      if ($('row-meter')) {
+        if (meterVal) {
+          $('row-meter').style.display = 'flex';
+          set('[data-meter]', isNaN(+meterVal) ? meterVal : money(+meterVal));
+        } else {
+          $('row-meter').style.display = 'none';
+        }
+      }
+
+      let co2 = ann * 0.82;
+      set('[data-co2]', (co2 / 1000).toFixed(1) + ' t');
+      set('[data-trees]', Math.round(co2 / 22));
+      set('[data-coal]', (ann * 0.70 / 1000).toFixed(1) + ' t');
+      set('[data-cars]', (co2 / 4600).toFixed(1));
+      if ($('bar1')) {
+        $('bar1').setAttribute('data-v', compact(cs[0]));
+        $('bar5').setAttribute('data-v', compact(cs[1]));
+        $('bar10').setAttribute('data-v', compact(cs[2]));
+        $('bar25').setAttribute('data-v', compact(cs[3]));
+        let mb = cs[3] || 1;
+        $('bar1').style.height = Math.max(15, (cs[0] / mb) * 100) + '%';
+        $('bar5').style.height = Math.max(15, (cs[1] / mb) * 100) + '%';
+        $('bar10').style.height = Math.max(15, (cs[2] / mb) * 100) + '%';
+        $('bar25').style.height = '100%';
+      }
+    }
+    $$('input,select').forEach(x => x.addEventListener('input', calc));
+    if ($('today')) $('today').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    if ($('today2')) $('today2').textContent = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    calc();
+    show(0);
   </script>
   <script>
     oldInverterField.outerHTML = '<div class="field"><label>Inverter product</label><select id="inverter"><option>Sungrow · SG5.0RS</option><option>GoodWe · GW5000D-NS</option><option>Solax · X1-5.0-T-D</option><option>Havells · Enviro GTi 5 kW</option></select></div>';
