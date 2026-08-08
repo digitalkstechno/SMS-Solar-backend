@@ -3,7 +3,11 @@ const { logActivity } = require("../utils/activityLogger");
 
 exports.createRole = async (req, res, next) => {
   try {
-    let roleDetails = req.body;
+    let roleDetails = { ...req.body };
+    if (req.user && req.user._id) {
+      roleDetails.createdBy = req.user._id;
+      roleDetails.updatedBy = req.user._id;
+    }
     let newRole = await ROLE.create(roleDetails);
 
     await logActivity(req, {
@@ -40,6 +44,8 @@ exports.fetchAllRoles = async (req, res) => {
 
     const totalRoles = await ROLE.countDocuments(query);
     const rolesData = await ROLE.find(query)
+      .populate("createdBy", "fullName name email")
+      .populate("updatedBy", "fullName name email")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
@@ -66,7 +72,9 @@ exports.fetchAllRoles = async (req, res) => {
 exports.fetchRoleById = async (req, res) => {
   try {
     let roleId = req.params.id;
-    let roleData = await ROLE.findById(roleId);
+    let roleData = await ROLE.findById(roleId)
+      .populate("createdBy", "fullName name email")
+      .populate("updatedBy", "fullName name email");
     if (!roleData) {
       throw new Error("Role not found");
     }
@@ -90,9 +98,15 @@ exports.roleUpdate = async (req, res) => {
     if (!oldRole) {
       throw new Error("Role not found");
     }
-    let updatedRole = await ROLE.findByIdAndUpdate(roleId, req.body, {
+    let updateBody = { ...req.body };
+    if (req.user && req.user._id) {
+      updateBody.updatedBy = req.user._id;
+    }
+    let updatedRole = await ROLE.findByIdAndUpdate(roleId, updateBody, {
       new: true,
-    });
+    })
+      .populate("createdBy", "fullName name email")
+      .populate("updatedBy", "fullName name email");
 
     await logActivity(req, {
       action: "UPDATE",

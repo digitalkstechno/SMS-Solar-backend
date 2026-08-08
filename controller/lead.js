@@ -25,6 +25,7 @@ exports.createLead = async (req, res) => {
     leadData.assignedTo = sanitizeObjectId(leadData.assignedTo);
     if (req.user && req.user._id) {
       leadData.createdBy = req.user._id;
+      leadData.updatedBy = req.user._id;
     }
     console.log("=== CREATE LEAD DEBUG ===");
     console.log("Current Logged-in User:", req.user ? req.user._id : "N/A");
@@ -246,6 +247,8 @@ exports.fetchAllLeads = async (req, res) => {
         .populate({ path: 'leadStatus', select: '-__v' })
         .populate({ path: 'assignedTo', select: '-password -__v' })
         .populate({ path: 'createdBy', select: '-password -__v' })
+        .populate({ path: 'updatedBy', select: '-password -__v' })
+        .populate({ path: 'activities.by', select: 'fullName name email' })
         .populate({ path: 'followUps.staff', select: 'fullName email' })
         .lean()
     ]);
@@ -256,7 +259,26 @@ exports.fetchAllLeads = async (req, res) => {
     const LeadSource = require("../model/leadSources");
     const leadSources = await LeadSource.find().lean();
 
+    const STAFF = require("../model/staff");
+    const USER = require("../model/user");
+    const [allStaff, allUsers] = await Promise.all([
+      STAFF.find().select("fullName email").lean(),
+      USER.find().select("fullName email").lean(),
+    ]);
+    const allUserMap = {};
+    allStaff.forEach(s => { allUserMap[s._id.toString()] = s.fullName || s.email; });
+    allUsers.forEach(u => { allUserMap[u._id.toString()] = u.fullName || u.email; });
+
     LeadData.forEach(lead => {
+      if (lead.updatedBy) {
+        if (typeof lead.updatedBy === 'object' && (lead.updatedBy.fullName || lead.updatedBy.name || lead.updatedBy.email)) {
+          lead.updatedByName = lead.updatedBy.fullName || lead.updatedBy.name || lead.updatedBy.email;
+        } else {
+          const uId = lead.updatedBy._id ? lead.updatedBy._id.toString() : lead.updatedBy.toString();
+          if (allUserMap[uId]) lead.updatedByName = allUserMap[uId];
+        }
+      }
+
       if (lead.assignedTo && lead.assignedTo.department) {
         const role = roles.find(r => r._id.toString() === lead.assignedTo.department.toString());
         if (role) {
@@ -366,10 +388,16 @@ exports.leadUpdate = async (req, res) => {
     }
 
     const updateData = { ...req.body };
+    if (req.user && req.user._id) {
+      updateData.updatedBy = req.user._id;
+    }
 
     // Sanitize ObjectIds
     updateData.leadStatus = sanitizeObjectId(updateData.leadStatus);
     updateData.assignedTo = sanitizeObjectId(updateData.assignedTo);
+    if (!updateData.assignedTo) {
+      updateData.assignedTo = oldLeads.assignedTo || oldLeads.createdBy;
+    }
 
 
     let currentAttachments = [...(oldLeads.attachments || [])];
