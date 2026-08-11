@@ -994,18 +994,18 @@
               style="padding: 10px 40px 0; position:relative; z-index:11; flex:1; display:flex; flex-direction:column; justify-content:flex-end;">
               <div class="kicker" style="color:#822650; font-weight:800; font-size:11px; margin-bottom:15px;">PREPARED
                 EXCLUSIVELY FOR</div>
-              <div style="display:flex; gap:30px; align-items:center;">
-                <div style="min-width: 150px;">
+              <div style="display:flex; gap:25px; align-items:center;">
+                <div style="flex: 1; max-width: 380px; word-wrap: break-word;">
                   <h2 data-name
-                    style="font-family:'Times New Roman', Times, serif; font-size:40px; margin:0; color:#1c1620; line-height:1;">
+                    style="font-family:'Times New Roman', Times, serif; font-size:28px; margin:0; color:#1c1620; line-height:1.2; word-break: break-word;">
                     <%= lead.fullName || data.fullName || "Customer" %>
                   </h2>
-                  <p style="font-size:16px; font-weight:800; color:#1c1620; margin:10px 0 0 0;">
+                  <p style="font-size:15px; font-weight:800; color:#1c1620; margin:8px 0 0 0;">
                     <%= lead.contact ||  "" %>
                   </p>
                 </div>
                 <div
-                  style="border-left:2px solid #e8dfea; padding-left:30px; display:flex; flex-direction:column; gap:4px;">
+                  style="border-left:2px solid #e8dfea; padding-left:25px; flex-shrink: 0; display:flex; flex-direction:column; gap:4px;">
                   <div style="color:#766d7b; font-size:12px; font-weight:600;"><span id="today"></span></div>
                   <div style="color:#766d7b; font-size:12px;">Prepared by <b data-exec style="color:#1c1620;">
                       <%= lead.assignName || lead.assignedTo?.fullName || "Sales Executive" %>
@@ -1074,7 +1074,7 @@
           </div>
           <hr style="border:0;border-top:1px dashed #e8dfea;margin:20px 0" />
           <div class="kicker">03 · Proposed system</div>
-          <h2>Designed for <span data-name>
+          <h2 style="font-size:22px; line-height:1.25; word-wrap:break-word; margin:4px 0 10px;">Designed for <span data-name>
               <%= lead.fullName || data.fullName || "Customer" %>
             </span>.</h2>
           <div class="twocol">
@@ -1608,10 +1608,21 @@
     function calc() {
       let s = +$('size').value || 0, w = +$('watt').value || 1, r = +$('rate').value || 0, g = +$('gross').value || 0, sub = +$('subsidy').value || 0, loan = +$('loan').value || 0, bill = +$('bill').value || 0;
       let gedaVal = ($('geda') ? $('geda').value.trim() : ''), meterVal = ($('meter') ? $('meter').value.trim() : '');
-      let pan = Math.ceil(s * 1000 / w), daily = s * 4.5, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100);
+      let pan = Math.round(s * 1000 / w), daily = s * 4, mon = daily * 30, ann = daily * 365, pay = g - sub, save = mon * r, annsave = save * 12, roi = pay ? annsave / pay * 100 : 0, pb = annsave ? pay / annsave : 0, area = s * ($('roof').value === 'Tin Roof' ? 90 : 100);
       let gen25 = 0, cGen = ann, cs = [0, 0, 0, 0], ts = 0, cRate = r;
       for (let i = 1; i <= 25; i++) { gen25 += cGen; let ys = cGen * cRate; ts += ys; if (i === 1) cs[0] = ts; if (i === 5) cs[1] = ts; if (i === 10) cs[2] = ts; if (i === 25) cs[3] = ts; cGen *= 0.995; cRate *= 1.03; }
-      set('[data-name]', $('name').value || '<%= lead.fullName || data.fullName || "Customer" %>');
+      let nameVal = $('name').value || '<%= lead.fullName || data.fullName || "Customer" %>';
+      set('[data-name]', nameVal);
+      let coverH2 = document.querySelector('h2[data-name]');
+      if (coverH2) {
+        if (nameVal.length > 25) {
+          coverH2.style.fontSize = '20px';
+        } else if (nameVal.length > 18) {
+          coverH2.style.fontSize = '24px';
+        } else {
+          coverH2.style.fontSize = '28px';
+        }
+      }
       set('[data-proposal]', $('proposal').value || '<%= lead.leadrefrance || "" %>');
       set('[data-exec]', $('exec').value || '<%= lead.assignName || "Sales Executive" %>');
       if ($('coverSize')) $('coverSize').textContent = s + ' KW On-Grid Solar System';
