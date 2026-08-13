@@ -18,6 +18,21 @@ exports.createLead = async (req, res) => {
   let leadData = {};
   try {
     leadData = { ...req.body };
+    // Check for duplicate contact number
+    if (leadData.contact) {
+      const trimmedContact = String(leadData.contact).replace(/\D/g, '').slice(-10);
+      if (trimmedContact && trimmedContact.length === 10) {
+        const existingLead = await LEAD.findOne({ 
+          contact: { $regex: new RegExp(trimmedContact + '$') } 
+        });
+        if (existingLead) {
+          return res.status(400).json({
+            status: "Fail",
+            message: `A lead with the mobile number '${trimmedContact}' already exists.`,
+          });
+        }
+      }
+    }
 
     // Sanitize ObjectIds
     leadData.leadStatus = sanitizeObjectId(leadData.leadStatus);
@@ -357,6 +372,23 @@ exports.leadUpdate = async (req, res) => {
     }
 
     const updateData = { ...req.body };
+
+    // Check for duplicate contact number (excluding current lead)
+    if (updateData.contact) {
+      const trimmedContact = String(updateData.contact).replace(/\D/g, '').slice(-10);
+      if (trimmedContact && trimmedContact.length === 10) {
+        const existingLead = await LEAD.findOne({
+          contact: { $regex: new RegExp(trimmedContact + '$') },
+          _id: { $ne: leadId }
+        });
+        if (existingLead) {
+          return res.status(400).json({
+            status: "Fail",
+            message: `A lead with the mobile number '${updateData.contact}' already exists.`,
+          });
+        }
+      }
+    }
 
     // Sanitize ObjectIds
     updateData.leadStatus = sanitizeObjectId(updateData.leadStatus);
@@ -2082,6 +2114,17 @@ exports.bulkImportLeads = async (req, res) => {
       try {
         if (req.user && req.user._id) {
           leadData.createdBy = req.user._id;
+        }
+        if (leadData.contact) {
+          const trimmedContact = String(leadData.contact).replace(/\D/g, '').slice(-10);
+          if (trimmedContact && trimmedContact.length === 10) {
+            const existingLead = await LEAD.findOne({ 
+              contact: { $regex: new RegExp(trimmedContact + '$') } 
+            });
+            if (existingLead) {
+              throw new Error(`A lead with the mobile number '${leadData.contact}' already exists.`);
+            }
+          }
         }
         const lead = await LEAD.create(leadData);
         await incrementCount({ statusId: lead.leadStatus });
