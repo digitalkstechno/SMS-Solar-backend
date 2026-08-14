@@ -2825,8 +2825,8 @@ exports.mergeDuplicates = async (req, res) => {
       const leads = groups[normalizedContact];
       if (leads.length <= 1) continue;
 
-      // Sort by createdAt descending (newest first)
-      leads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // Sort by createdAt ascending (oldest first) to keep the oldest lead as primary
+      leads.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
       const primaryLead = leads[0];
       const secondaryLeads = leads.slice(1);
