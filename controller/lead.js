@@ -22,8 +22,8 @@ exports.createLead = async (req, res) => {
     if (leadData.contact) {
       const trimmedContact = String(leadData.contact).replace(/\D/g, '').slice(-10);
       if (trimmedContact && trimmedContact.length === 10) {
-        const existingLead = await LEAD.findOne({ 
-          contact: { $regex: new RegExp(trimmedContact + '$') } 
+        const existingLead = await LEAD.findOne({
+          contact: { $regex: new RegExp(trimmedContact + '$') }
         });
         if (existingLead) {
           return res.status(400).json({
@@ -258,7 +258,7 @@ exports.fetchAllLeads = async (req, res) => {
 
     const ROLE = require("../model/role");
     const roles = await ROLE.find().lean();
-    
+
     const LeadSource = require("../model/leadSources");
     const leadSources = await LeadSource.find().lean();
 
@@ -269,7 +269,7 @@ exports.fetchAllLeads = async (req, res) => {
           lead.assignedTo.departmentName = role.roleName || role.name;
         }
       }
-      
+
       if (lead.leadrefrance) {
         const source = leadSources.find(s => s._id.toString() === lead.leadrefrance.toString());
         if (source) {
@@ -319,7 +319,7 @@ exports.fetchLeadById = async (req, res) => {
 
     const ROLE = require("../model/role");
     const roles = await ROLE.find().lean();
-    
+
     if (leadData.assignedTo && leadData.assignedTo.department) {
       const role = roles.find(r => r._id.toString() === leadData.assignedTo.department.toString());
       if (role) {
@@ -1428,10 +1428,11 @@ exports.getWonLeads = async (req, res) => {
 
     const { search, staff, date, from, to, source } = req.query;
 
-    // First find the Won status
-    const wonStatus = await LeadStatus.findOne({ name: { $regex: /^won$/i } }); // Case insensitive
+    // First find the Won status(es)
+    const wonStatuses = await LeadStatus.find({ name: { $regex: /^(won|order won)$/i } });
+    const wonStatusIds = wonStatuses.map(s => s._id);
 
-    if (!wonStatus) {
+    if (wonStatusIds.length === 0) {
       return res.status(200).json({
         status: "Success",
         message: "No won leads found",
@@ -1446,8 +1447,9 @@ exports.getWonLeads = async (req, res) => {
     }
 
     const query = {
-      leadStatus: wonStatus._id,
+      leadStatus: { $in: wonStatusIds },
     };
+    console.log("BACKEND WON LEADS QUERY:", JSON.stringify(query, null, 2));
     const andConditions = [];
 
     if (req.leadScope === "own" && req.user && req.user._id) {
@@ -1550,10 +1552,11 @@ exports.getLostLeads = async (req, res) => {
 
     const { search, staff, date, from, to, source } = req.query;
 
-    // First find the Lost status
-    const lostStatus = await LeadStatus.findOne({ name: { $regex: /^lost$/i } }); // Case insensitive
+    // First find the Lost status(es)
+    const lostStatuses = await LeadStatus.find({ name: { $regex: /^(lost|order lost)$/i } });
+    const lostStatusIds = lostStatuses.map(s => s._id);
 
-    if (!lostStatus) {
+    if (lostStatusIds.length === 0) {
       return res.status(200).json({
         status: "Success",
         message: "No lost leads found",
@@ -1568,7 +1571,7 @@ exports.getLostLeads = async (req, res) => {
     }
 
     const query = {
-      leadStatus: lostStatus._id,
+      leadStatus: { $in: lostStatusIds },
       isActive: true
     };
     const andConditions = [];
@@ -2118,8 +2121,8 @@ exports.bulkImportLeads = async (req, res) => {
         if (leadData.contact) {
           const trimmedContact = String(leadData.contact).replace(/\D/g, '').slice(-10);
           if (trimmedContact && trimmedContact.length === 10) {
-            const existingLead = await LEAD.findOne({ 
-              contact: { $regex: new RegExp(trimmedContact + '$') } 
+            const existingLead = await LEAD.findOne({
+              contact: { $regex: new RegExp(trimmedContact + '$') }
             });
             if (existingLead) {
               throw new Error(`A lead with the mobile number '${leadData.contact}' already exists.`);
@@ -2313,12 +2316,12 @@ exports.deleteQuotation = async (req, res) => {
       return res.status(404).json({ status: "Fail", message: "Lead not found" });
     }
 
-   
+
     const initialLength = lead.quotations.length;
     lead.quotations = lead.quotations.filter(q => q._id.toString() !== quotationId);
 
     if (lead.quotations.length === initialLength) {
-       return res.status(404).json({ status: "Fail", message: "Quotation not found" });
+      return res.status(404).json({ status: "Fail", message: "Quotation not found" });
     }
 
     await lead.save();
@@ -2345,7 +2348,7 @@ exports.getQuotation = async (req, res) => {
       return res.status(404).json({ status: "Fail", message: "Lead not found" });
     }
     const quotation = lead.quotations.find(q => q._id.toString() === quotationId);
-    
+
     if (!quotation) {
       return res.status(404).json({ status: "Fail", message: "Quotation not found" });
     }
@@ -2381,7 +2384,7 @@ exports.getDashboardStats = async (req, res) => {
       });
     }
 
-    
+
     if (status) {
       const statusArr = status.split(',').filter(s => s.trim());
       if (statusArr.length === 1) {
@@ -2400,7 +2403,7 @@ exports.getDashboardStats = async (req, res) => {
       }
     }
 
-   
+
     if (source) {
       const sourceArr = source.split(',').filter(s => s.trim());
       if (sourceArr.length === 1) {
@@ -2451,14 +2454,14 @@ exports.getDashboardStats = async (req, res) => {
     let statusWiseMap = {};
     let visitsDone = 0;
     let visitsPending = 0;
-    
+
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const now = new Date();
 
     for (const lead of leads) {
       const statusName = lead.leadStatus?.name?.toLowerCase() || "";
       const statusId = lead.leadStatus?._id?.toString();
-      
+
       if (statusId && lead.leadStatus?.name) {
         if (!statusWiseMap[statusId]) {
           statusWiseMap[statusId] = { statusId: statusId, statusName: lead.leadStatus.name, count: 0 };
@@ -2488,23 +2491,23 @@ exports.getDashboardStats = async (req, res) => {
 
       if (lead.followUps && Array.isArray(lead.followUps)) {
         for (const fu of lead.followUps) {
-           if (fu.status === "Pending") {
-             followups++;
-           }
+          if (fu.status === "Pending") {
+            followups++;
+          }
         }
       }
 
       const assignName = lead.assignedTo ? (lead.assignedTo.fullName || "Unassigned") : "Unassigned";
       if (!salesWinRate[assignName]) {
-         salesWinRate[assignName] = { name: assignName, won: 0, lost: 0, inProgress: 0, total: 0 };
+        salesWinRate[assignName] = { name: assignName, won: 0, lost: 0, inProgress: 0, total: 0 };
       }
       salesWinRate[assignName].total += 1;
       if (isWon) {
-         salesWinRate[assignName].won += 1;
+        salesWinRate[assignName].won += 1;
       } else if (statusName === "lost") {
-         salesWinRate[assignName].lost += 1;
+        salesWinRate[assignName].lost += 1;
       } else {
-         salesWinRate[assignName].inProgress += 1;
+        salesWinRate[assignName].inProgress += 1;
       }
     }
     const formatChart = (obj) => Object.keys(obj).map(k => ({ name: k, value: obj[k] }));
@@ -2513,23 +2516,23 @@ exports.getDashboardStats = async (req, res) => {
     return res.status(200).json({
       status: "Success",
       data: {
-         counts: {
-            total: totalLeads,
-            new: newLeads,
-            won: wonLeads,
-            lost: lostLeads,
-            open: openLeads,
-            followups: followups,
-            revenue: totalRevenue
-         },
-         charts: {
-            statusWiseCounts: statusWiseCounts,
-            salesWinRate: Object.values(salesWinRate).sort((a,b) => b.total - a.total),
-            visits: [
-              { name: "Done", value: visitsDone },
-              { name: "Pending", value: visitsPending }
-            ]
-         }
+        counts: {
+          total: totalLeads,
+          new: newLeads,
+          won: wonLeads,
+          lost: lostLeads,
+          open: openLeads,
+          followups: followups,
+          revenue: totalRevenue
+        },
+        charts: {
+          statusWiseCounts: statusWiseCounts,
+          salesWinRate: Object.values(salesWinRate).sort((a, b) => b.total - a.total),
+          visits: [
+            { name: "Done", value: visitsDone },
+            { name: "Pending", value: visitsPending }
+          ]
+        }
       }
     });
   } catch (error) {
@@ -2557,7 +2560,7 @@ exports.getVisitStats = async (req, res) => {
     } else if (filter === "this week") {
       startDate = new Date(today);
       const day = startDate.getDay();
-      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); 
+      const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
       startDate.setDate(diff);
     } else if (filter === "this month") {
       startDate = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -2596,7 +2599,7 @@ exports.getVisitLeads = async (req, res) => {
   try {
     const { filter, page = 1, limit = 10 } = req.query;
     const match = req.baseLeadMatch || {};
-    
+
     // Must have a visit date and not be completed
     match.visitDate = { $exists: true, $ne: null };
     match.isVisitCompleted = { $ne: true };
@@ -2615,7 +2618,7 @@ exports.getVisitLeads = async (req, res) => {
       const day = startDate.getDay();
       const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
       startDate.setDate(diff);
-      
+
       endDate = new Date(startDate);
       endDate.setDate(startDate.getDate() + 6);
       endDate.setHours(23, 59, 59, 999);
@@ -2722,7 +2725,7 @@ exports.assignStock = async (req, res) => {
         date: new Date()
       });
     }
-    
+
     lead.activities.push({
       message: `Assigned ${quantity} of ${product.name} to this lead`,
       by: userId
@@ -2749,7 +2752,7 @@ exports.updateVisitStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { isVisitDone, visitDate, isVisitCompleted } = req.body;
-    
+
     // Build update object dynamically
     const updateObj = {};
     if (isVisitDone !== undefined) updateObj.isVisitDone = isVisitDone;
@@ -2804,14 +2807,14 @@ const migrateExistingLeads = async () => {
 exports.mergeDuplicates = async (req, res) => {
   try {
     const allLeads = await LEAD.find({ contact: { $ne: null } });
-    
+
     // Group by normalized 10-digit contact number
     const groups = {};
     for (const lead of allLeads) {
       if (!lead.contact) continue;
       const normalized = String(lead.contact).replace(/\D/g, '').slice(-10);
       if (normalized.length !== 10) continue;
-      
+
       if (!groups[normalized]) {
         groups[normalized] = [];
       }
@@ -2867,8 +2870,8 @@ exports.mergeDuplicates = async (req, res) => {
 
         // Fill missing fields on primary from secondary
         const fieldsToCopy = [
-          'email', 'kwRequirement', 'discomName', 'leadrefrance', 
-          'address', 'city', 'locationLink', 'leadLabel', 'projecttype', 
+          'email', 'kwRequirement', 'discomName', 'leadrefrance',
+          'address', 'city', 'locationLink', 'leadLabel', 'projecttype',
           'lostReason', 'lostDate', 'wonDate', 'assignedTo', 'visitDate',
           'nextFollowupDate', 'nextFollowupTime', 'lastFollowUp', 'metaLeadId', 'metaRawData'
         ];
@@ -2936,11 +2939,11 @@ exports.mergeDuplicates = async (req, res) => {
 
 const migrateLeadVisitStatus = async () => {
   try {
-    const leadsToUpdate = await LEAD.find({ 
-      'followUps.0': { $exists: true }, 
-      isVisitDone: { $ne: true } 
+    const leadsToUpdate = await LEAD.find({
+      'followUps.0': { $exists: true },
+      isVisitDone: { $ne: true }
     });
-    
+
     if (leadsToUpdate.length > 0) {
       console.log(`[Migration] Found ${leadsToUpdate.length} leads with follow-ups but no visit status. Updating...`);
       await LEAD.updateMany(
@@ -2954,6 +2957,6 @@ const migrateLeadVisitStatus = async () => {
   }
 };
 
-setTimeout(migrateExistingLeads, 5000); 
-setTimeout(migrateLeadVisitStatus, 6000); 
+setTimeout(migrateExistingLeads, 5000);
+setTimeout(migrateLeadVisitStatus, 6000);
 

@@ -177,15 +177,15 @@ exports.LeadStatusDelete = async (req, res) => {
 exports.setupDefaultLeadStatuses = async () => {
   try {
     const defaultStatuses = [
-      { name: "New Lead", order: 1 },
-      { name: "Won", order: 2 },
-      { name: "Lost", order: 3 },
+      { name: "New Lead", regex: /^(new lead|new)$/i, order: 1 },
+      { name: "Order Won", regex: /^(won|order won)$/i, order: 2 },
+      { name: "Order Lost", regex: /^(lost|order lost)$/i, order: 3 },
     ];
 
     for (const status of defaultStatuses) {
-      const existingStatus = await LEADSTATUS.findOne({ name: status.name });
+      const existingStatus = await LEADSTATUS.findOne({ name: { $regex: status.regex } });
       if (!existingStatus) {
-        await LEADSTATUS.create(status);
+        await LEADSTATUS.create({ name: status.name, order: status.order });
       }
     }
   } catch (error) {
