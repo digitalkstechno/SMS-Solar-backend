@@ -35,13 +35,11 @@ let {
   getQuotation,
   getDashboardStats,
   assignStock,
-  updateVisitStatus,
-  mergeDuplicates
+  updateVisitStatus
 } = require("../controller/lead");
 const authMiddleware = require("../middleware/auth");
 const { authorize, leadReadScope } = require("../middleware/permissions");
 
-router.post("/merge-duplicates", authMiddleware, authorize("lead", "delete"), mergeDuplicates);
 router.post("/:id/assign-stock", authMiddleware, authorize("lead", "update"), assignStock);
 router.post("/create", authMiddleware, authorize("lead", "create"), upload.array("attachments"), createLead);
 router.get("/my", authMiddleware, fetchMyLeads);
