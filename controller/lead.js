@@ -2957,6 +2957,16 @@ const migrateLeadVisitStatus = async () => {
   }
 };
 
-setTimeout(migrateExistingLeads, 5000);
-setTimeout(migrateLeadVisitStatus, 6000);
+const autoMergeDuplicatesOnStart = async () => {
+  try {
+    console.log("[Migration] Running automatic duplicate lead merge on startup...");
+    const stats = await exports.mergeDuplicates();
+    console.log(`[Migration] Duplicate lead merge completed. Merged groups: ${stats.mergedGroupsCount}, Duplicates removed: ${stats.duplicatesRemovedCount}`);
+  } catch (err) {
+    console.error("[Migration] Error merging duplicates on startup:", err);
+  }
+};
 
+setTimeout(migrateExistingLeads, 5000); 
+setTimeout(migrateLeadVisitStatus, 6000); 
+setTimeout(autoMergeDuplicatesOnStart, 7000);
