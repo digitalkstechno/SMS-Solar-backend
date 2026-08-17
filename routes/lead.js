@@ -97,6 +97,12 @@ router.put(
   updateKanbanStatus,
 );
 router.put(
+  "/status/:id",
+  authMiddleware,
+  authorize("lead", "update"),
+  updateKanbanStatus,
+);
+router.put(
   "/:id/visit",
   authMiddleware,
   authorize("lead", "update"),
