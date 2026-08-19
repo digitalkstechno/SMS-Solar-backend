@@ -1081,11 +1081,11 @@
             <div class="offer">
               <div class="row"><span>System size</span><b data-size>5 KW</b></div>
               <div class="row"><span>Solar module</span><b data-module>
-                  <%= quotation.solarModule || "-" %>
+                  <%= quotation.solarModule || (quotation.rows && quotation.rows.find(r => r.title.toLowerCase().includes('module'))?.values[0]) || "-" %>
                 </b></div>
               <div class="row"><span>Module quantity</span><b data-panels>10 × 550 W</b></div>
               <div class="row"><span>Inverter</span><b data-inverter>
-                  <%= quotation.inverter || "-" %>
+                  <%= quotation.inverter || (quotation.rows && quotation.rows.find(r => r.title.toLowerCase().includes('inverter'))?.values[0]) || "-" %>
                 </b></div>
               <div class="row"><span>Roof / area</span><b data-area>Flat · 500 sq ft</b></div>
             </div>
@@ -1327,48 +1327,72 @@
         <section class="page">
           <div class="kicker" style="margin-top: 30px;">09 · Detailed specifications</div>
           <h2>Bill of Materials (1/2)</h2>
+          <%
+            let getRowVal = (titles) => {
+              if (!quotation || !quotation.rows) return '';
+              if (!Array.isArray(titles)) titles = [titles];
+              for (let t of titles) {
+                let r = quotation.rows.find(row => row && row.title && (row.title.toLowerCase().trim() === t.toLowerCase().trim() || row.title.toLowerCase().includes(t.toLowerCase())));
+                if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
+              }
+              return '';
+            };
+
+            let bomModule = quotation.solarModule || getRowVal(['solar module product', 'solar module', 'module']) || 'Adani / Goldi / Waaree / Rayzon / Pahal';
+            let bomInverter = quotation.inverter || getRowVal(['inverter product', 'inverter']) || 'Solaryaan / Velox';
+            
+            let dcProt = getRowVal(['dc protection', 'dcdb']);
+            let acProt = getRowVal(['ac protection', 'acdb']);
+            let acdcArray = [];
+            if (acProt) acdcArray.push(acProt);
+            if (dcProt && dcProt !== acProt) acdcArray.push(dcProt);
+            let bomAcdcDcdb = acdcArray.length > 0 ? acdcArray.join(' / ') : 'Simens';
+
+            let bomCable = getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
+            let bomStructure = getRowVal(['structure product', 'structure']) || 'Hindustan 60 x 40 2 mm ( 80 x 40 x 2mm if required )';
+          %>
           <table class="spec-table">
             <tbody>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_SOLAR PANEL.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">SOLAR MODULES</td>
-                <td class="desc-col"><b>Adani / Goldi / Waaree / Rayzon / Pahal</b><br>with 30 years output warranty,
+                <td class="desc-col"><b><%= bomModule %></b><br>with 30 years output warranty,
                   IP67 rated junction box protection.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/SOLAR INVERTER.png"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">INVERTER</td>
-                <td class="desc-col"><b>Solaryaan / Velox</b><br>with 10 year warranty, Wi-Fi / GPRS monitoring, IEC
+                <td class="desc-col"><b><%= bomInverter %></b><br>with 10 year warranty, Wi-Fi / GPRS monitoring, IEC
                   62109-1/2, IEC 61727, IEC 61683, MNRE approved.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_ACDB DCDB.jpeg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">ACDB / DCDB</td>
-                <td class="desc-col"><b>Simens</b> MCB and SPD, IP65 / IP66, powder coated CRCA steel or polycarbonate,
+                <td class="desc-col"><b><%= bomAcdcDcdb %></b> MCB and SPD, IP65 / IP66, powder coated CRCA steel or polycarbonate,
                   UV stabilized.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_AC CABLE.jpeg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">AC CABLE</td>
-                <td class="desc-col"><b>Polycab 4 SQMM</b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                <td class="desc-col"><b><%= bomCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
                   60228), temperature rating -10°C to +70°C.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_DC CABLE.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">DC CABLE</td>
-                <td class="desc-col"><b>Polycab 4 SQMM</b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                <td class="desc-col"><b><%= bomCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
                   60228), temperature rating -40°C to +120°C.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/EARTHING CABLE.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">EARTHING CABLE</td>
-                <td class="desc-col"><b>Polycab 4 SQMM</b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
+                <td class="desc-col"><b><%= bomCable %></b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
                   for flexibility.</td>
               </tr>
               <tr>
@@ -1403,7 +1427,7 @@
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/STRUCTURE.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">STRUCTURE PIPE</td>
-                <td class="desc-col"><b>Hindustan 60 x 40 2 mm ( 80 x 40 x 2mm if required )</b><br>40x40mm, 80x40mm,
+                <td class="desc-col"><b><%= bomStructure %></b><br>40x40mm, 80x40mm,
                   80x40mm (2.0 mm thickness) IS 1161/ IS 4923 / ASTM A500 / IS 2062, ≥15 years outdoor life</td>
               </tr>
               <tr>
