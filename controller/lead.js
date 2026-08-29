@@ -1809,12 +1809,12 @@ exports.exportLeadsToExcel = async (req, res) => {
       cell.fill = {
         type: "pattern",
         pattern: "solid",
-        fgColor: { argb: "FF1E40AF" }, // deep blue
+        fgColor: { argb: "FFA63C71" }, // theme maroon
       };
       cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
       cell.alignment = { vertical: "middle", horizontal: "center" };
       cell.border = {
-        bottom: { style: "medium", color: { argb: "FF1E40AF" } },
+        bottom: { style: "medium", color: { argb: "FFA63C71" } },
       };
     });
     headerRow.height = 28;
@@ -1852,7 +1852,7 @@ exports.exportLeadsToExcel = async (req, res) => {
           cell.fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FFF0F4FF" },
+            fgColor: { argb: "FFF9EBF2" },
           };
         });
       }
@@ -1977,10 +1977,10 @@ exports.downloadImportTemplate = async (req, res) => {
     // Style header row
     const headerRow = sheet.getRow(1);
     headerRow.eachCell((cell) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E40AF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFA63C71" } };
       cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
       cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-      cell.border = { bottom: { style: "medium", color: { argb: "FF1E40AF" } } };
+      cell.border = { bottom: { style: "medium", color: { argb: "FFA63C71" } } };
     });
     headerRow.height = 30;
 
@@ -1995,7 +1995,7 @@ exports.downloadImportTemplate = async (req, res) => {
       note: "Sample note",
     });
     sampleRow.eachCell((cell) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEEF2FF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF9EBF2" } };
       cell.alignment = { vertical: "middle" };
     });
     sampleRow.height = 22;

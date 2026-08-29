@@ -225,7 +225,7 @@ exports.exportStockInReport = async (req, res) => {
     sheet.getRow(1).fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FF4F81BD" },
+      fgColor: { argb: "FFA63C71" },
     };
     sheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
 
