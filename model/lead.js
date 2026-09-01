@@ -135,6 +135,10 @@ const LeadSchema = new Schema(
       type: Date,
       default: null
     },
+    visitNote: {
+      type: String,
+      trim: true
+    },
     nextFollowupDate: {
       type: Date,
       default: null,

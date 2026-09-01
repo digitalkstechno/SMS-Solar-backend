@@ -468,6 +468,24 @@ exports.leadUpdate = async (req, res) => {
         message: `Follow-up added for ${datePart}${latestFollowUp.note ? ' | Note: ' + latestFollowUp.note : ''}`,
         by: req.user ? req.user._id : undefined,
         date: new Date()
+    }
+
+    if (updateData.visitNote) {
+      const vDate = updateData.visitDate ? String(updateData.visitDate).substring(0, 10) : '';
+      newActivities.push({
+        message: `Visit scheduled${vDate ? ' for ' + vDate : ''} | Note: ${updateData.visitNote}`,
+        by: req.user ? req.user._id : undefined,
+        date: new Date()
+      });
+      if (!updateData.followUps) {
+        updateData.followUps = [...(oldLeads.followUps || [])];
+      }
+      updateData.followUps.push({
+        date: updateData.visitDate || new Date(),
+        time: '',
+        note: `[Visit Scheduled] ${updateData.visitNote}`,
+        staff: req.user ? req.user._id : undefined,
+        createdAt: new Date()
       });
     }
 

@@ -7,8 +7,8 @@ exports.createTransaction = async (req, res) => {
   try {
     const { categoryId, productId, type, quantity, note, unit } = req.body;
 
-    if (!categoryId || !productId || !type || !quantity) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!categoryId || !productId || !type || !quantity || !note || !String(note).trim()) {
+      return res.status(400).json({ message: "Missing required fields (Note is required)" });
     }
 
     if (type !== "IN" && type !== "OUT") {
@@ -99,6 +99,10 @@ exports.updateTransaction = async (req, res) => {
   try {
     const { categoryId, productId, quantity, note, unit } = req.body;
     const { id } = req.params;
+
+    if (!note || !String(note).trim()) {
+      return res.status(400).json({ message: "Note is required" });
+    }
 
     const oldTransaction = await STOCK_TRANSACTION.findById(id);
     if (!oldTransaction) {
