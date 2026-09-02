@@ -468,6 +468,7 @@ exports.leadUpdate = async (req, res) => {
         message: `Follow-up added for ${datePart}${latestFollowUp.note ? ' | Note: ' + latestFollowUp.note : ''}`,
         by: req.user ? req.user._id : undefined,
         date: new Date()
+      });
     }
 
     if (updateData.visitNote) {
