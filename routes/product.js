@@ -4,6 +4,7 @@ const productController = require("../controller/product");
 const authMiddleware = require("../middleware/auth");
 
 router.post("/", authMiddleware, productController.createProduct);
+router.get("/export", authMiddleware, productController.exportLiveStockReport);
 router.get("/", authMiddleware, productController.getAllProducts);
 router.get("/:id", authMiddleware, productController.getProductById);
 router.patch("/:id", authMiddleware, productController.updateProduct);

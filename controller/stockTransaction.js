@@ -28,7 +28,6 @@ exports.createTransaction = async (req, res) => {
       return res.status(400).json({ message: "Insufficient stock for this product" });
     }
 
-    // Create the transaction
     const newTransaction = await STOCK_TRANSACTION.create({
       categoryId,
       productId,
@@ -38,7 +37,6 @@ exports.createTransaction = async (req, res) => {
       unit: unit || "Qty",
     });
 
-    // Update product stock and unit
     if (type === "IN") {
       product.currentStock += quantity;
       if (unit) {
@@ -57,8 +55,6 @@ exports.createTransaction = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Get all transactions by type
 exports.getAllTransactions = async (req, res) => {
   try {
     const { type, from, to } = req.query; // 'IN' or 'OUT', dates
@@ -114,17 +110,14 @@ exports.updateTransaction = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Calculate the difference to adjust stock properly
     const difference = quantity - oldTransaction.quantity;
 
     if (oldTransaction.type === "OUT") {
-      // If updating OUT, ensure the new quantity doesn't exceed currentStock + oldQuantity
       if (product.currentStock + oldTransaction.quantity < quantity) {
         return res.status(400).json({ message: "Insufficient stock for this update" });
       }
       product.currentStock -= difference;
     } else if (oldTransaction.type === "IN") {
-      // If updating IN, allow currentStock to adjust even if it temporarily goes negative
       product.currentStock += difference;
     }
 
@@ -183,10 +176,25 @@ exports.deleteTransaction = async (req, res) => {
   }
 };
 
-exports.exportStockInReport = async (req, res) => {
+exports.exportStockTransactions = async (req, res) => {
   try {
-    const { from, to } = req.query;
-    const query = { type: 'IN' };
+    const { from, to, type = 'IN', categoryId, productId, search } = req.query;
+    const query = {};
+    if (type) {
+      query.type = type;
+    }
+    if (categoryId) {
+      query.categoryId = categoryId;
+    }
+    if (productId) {
+      query.productId = productId;
+    }
+    if (search?.trim()) {
+      const matchingProducts = await PRODUCT.find({
+        name: { $regex: search.trim(), $options: "i" },
+      }).select("_id");
+      query.productId = { $in: matchingProducts.map((product) => product._id) };
+    }
 
     if (from || to) {
       query.createdAt = {};
@@ -204,56 +212,140 @@ exports.exportStockInReport = async (req, res) => {
 
     const transactions = await STOCK_TRANSACTION.find(query)
       .populate("categoryId", "name")
-      .populate("productId", "name currentStock")
+      .populate("productId", "name currentStock unit")
       .sort({ createdAt: -1 });
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = "CRM System";
     workbook.created = new Date();
 
-    const sheet = workbook.addWorksheet("Stock In Report", {
+    const reportTitle = type === 'OUT' ? 'Stock Out Report' : 'Stock In Report';
+    const sheet = workbook.addWorksheet(reportTitle, {
       pageSetup: { fitToPage: true, orientation: "landscape" },
     });
 
-    sheet.columns = [
-      { header: "S.No", key: "sno", width: 7 },
-      { header: "Date", key: "date", width: 15 },
-      { header: "Category", key: "category", width: 20 },
-      { header: "Product Name", key: "productName", width: 30 },
-      { header: "Added Quantity", key: "addedQty", width: 15 },
-      { header: "Current Stock", key: "currentStock", width: 15 },
-      { header: "Note", key: "note", width: 30 },
-    ];
+    const TOTAL_COLS = 9;
+    const THEME = "FFA63C71";
+    const THEME_LIGHT = "FFF5E9F1";
+    const WHITE = "FFFFFFFF";
+    const DARK = "FF2D2D2D";
+    const BORDER_CLR = "FFD0D0D0";
+    const qtyHeader = type === 'OUT' ? 'Deducted Qty' : 'Added Qty';
+    const colWidths = [7, 14, 12, 22, 32, 16, 10, 16, 32];
 
-    sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-    sheet.getRow(1).fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFA63C71" },
-    };
-    sheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+    // Set column widths
+    colWidths.forEach((w, i) => { sheet.getColumn(i + 1).width = w; });
 
+    // ── ROW 1: Title ──
+    sheet.mergeCells(1, 1, 1, TOTAL_COLS);
+    const titleCell = sheet.getCell("A1");
+    titleCell.value = "SMS Solar - " + reportTitle;
+    titleCell.font = { bold: true, size: 16, color: { argb: WHITE }, name: "Calibri" };
+    titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: THEME } };
+    titleCell.alignment = { vertical: "middle", horizontal: "center" };
+    sheet.getRow(1).height = 36;
+
+    // ── ROW 2: Generated date + filter info ──
+    sheet.mergeCells(2, 1, 2, TOTAL_COLS);
+    const now = new Date();
+    const genAt = now.toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
+    let filterInfo = "";
+    if (from || to) {
+      const f = from ? new Date(from).toLocaleDateString("en-IN") : "Start";
+      const t = to ? new Date(to).toLocaleDateString("en-IN") : "Now";
+      filterInfo = "   |   Period: " + f + " - " + t;
+    }
+    const subCell = sheet.getCell("A2");
+    subCell.value = "Generated: " + genAt + filterInfo;
+    subCell.font = { size: 10, italic: true, color: { argb: "FF6B6B6B" } };
+    subCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF9F9F9" } };
+    subCell.alignment = { vertical: "middle", horizontal: "center" };
+    sheet.getRow(2).height = 22;
+
+    // ── ROW 3: Spacer ──
+    sheet.mergeCells(3, 1, 3, TOTAL_COLS);
+    sheet.getRow(3).height = 6;
+
+    // ── ROW 4: Column Headers ──
+    const headers = ["S.No", "Date", "Time", "Category", "Product Name", qtyHeader, "Unit", "Current Stock", "Note"];
+    headers.forEach((h, i) => {
+      const cell = sheet.getCell(4, i + 1);
+      cell.value = h;
+      cell.font = { bold: true, color: { argb: WHITE }, size: 11, name: "Calibri" };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: THEME } };
+      cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      cell.border = {
+        top: { style: "thin", color: { argb: WHITE } },
+        bottom: { style: "thin", color: { argb: WHITE } },
+        left: { style: "thin", color: { argb: WHITE } },
+        right: { style: "thin", color: { argb: WHITE } },
+      };
+    });
+    sheet.getRow(4).height = 28;
+
+    // ── DATA ROWS ──
     transactions.forEach((tx, index) => {
-      const row = sheet.addRow({
-        sno: index + 1,
-        date: tx.createdAt ? new Date(tx.createdAt).toLocaleDateString("en-IN") : "-",
-        category: tx.categoryId?.name || "-",
-        productName: tx.productId?.name || "-",
-        addedQty: tx.quantity || 0,
-        currentStock: tx.productId?.currentStock || 0,
-        note: tx.note || "-",
+      const created = tx.createdAt ? new Date(tx.createdAt) : null;
+      const dateStr = created ? created.toLocaleDateString("en-IN") : "-";
+      const timeStr = created ? created.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-";
+
+      const rowData = [
+        index + 1, dateStr, timeStr,
+        tx.categoryId?.name || "-",
+        tx.productId?.name || "-",
+        tx.quantity || 0,
+        tx.unit || tx.productId?.unit || "-",
+        tx.productId?.currentStock ?? 0,
+        tx.note || "-",
+      ];
+
+      const rowNum = index + 5;
+      const isEven = index % 2 === 0;
+      const exRow = sheet.getRow(rowNum);
+
+      rowData.forEach((val, ci) => {
+        const cell = exRow.getCell(ci + 1);
+        cell.value = val;
+        cell.font = { size: 10, color: { argb: DARK } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: isEven ? WHITE : THEME_LIGHT } };
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: ci === 0 ? "center" : (ci === 5 || ci === 7) ? "right" : "left",
+          wrapText: ci === 8,
+        };
+        cell.border = {
+          bottom: { style: "hair", color: { argb: BORDER_CLR } },
+          right: { style: "hair", color: { argb: BORDER_CLR } },
+        };
       });
-      row.alignment = { vertical: "middle", horizontal: "left" };
+      exRow.height = 20;
     });
 
-    res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    );
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="stock_in_report_${Date.now()}.xlsx"`
-    );
+    // ── SUMMARY ROW ──
+    const sumRowNum = transactions.length + 5;
+    sheet.mergeCells(sumRowNum, 1, sumRowNum, 5);
+    const sumLabel = sheet.getCell(sumRowNum, 1);
+    sumLabel.value = "Total Records: " + transactions.length;
+    sumLabel.font = { bold: true, size: 10, color: { argb: WHITE } };
+    sumLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: THEME } };
+    sumLabel.alignment = { horizontal: "right", vertical: "middle" };
+
+    const totalQty = transactions.reduce((s, tx) => s + (tx.quantity || 0), 0);
+    const sumQty = sheet.getCell(sumRowNum, 6);
+    sumQty.value = totalQty;
+    sumQty.font = { bold: true, size: 10, color: { argb: WHITE } };
+    sumQty.fill = { type: "pattern", pattern: "solid", fgColor: { argb: THEME } };
+    sumQty.alignment = { horizontal: "right", vertical: "middle" };
+
+    for (let c = 7; c <= TOTAL_COLS; c++) {
+      const cell = sheet.getCell(sumRowNum, c);
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: THEME } };
+    }
+    sheet.getRow(sumRowNum).height = 22;
+
+    const filePrefix = type === 'OUT' ? 'stock_out_report' : 'stock_in_report';
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="' + filePrefix + '_' + Date.now() + '.xlsx"');
 
     await workbook.xlsx.write(res);
     res.end();
@@ -261,3 +353,5 @@ exports.exportStockInReport = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.exportStockInReport = exports.exportStockTransactions;
