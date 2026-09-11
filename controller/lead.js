@@ -442,10 +442,17 @@ exports.leadUpdate = async (req, res) => {
     // 🔹 Follow-up staff injection & data sanitization
     if (updateData.followUps && Array.isArray(updateData.followUps)) {
       updateData.followUps = updateData.followUps.map(f => {
-        if (!f.staff && req.user && req.user._id) {
-          f.staff = req.user._id;
+        let staffId = f.staff;
+        if (typeof staffId === 'object' && staffId?._id) {
+          staffId = staffId._id;
         }
-        return f;
+        if (!staffId && req.user && req.user._id) {
+          staffId = req.user._id;
+        }
+        return {
+          ...f,
+          staff: staffId
+        };
       });
     }
 
@@ -461,9 +468,9 @@ exports.leadUpdate = async (req, res) => {
       }
     }
 
-    if (updateData.followUps && Array.isArray(updateData.followUps) && oldLeads.followUps && updateData.followUps.length > oldLeads.followUps.length) {
+    if (updateData.followUps && Array.isArray(updateData.followUps) && (updateData.followUps.length > (oldLeads.followUps || []).length)) {
       const latestFollowUp = updateData.followUps[updateData.followUps.length - 1];
-      const datePart = latestFollowUp.date ? (typeof latestFollowUp.date === 'string' ? latestFollowUp.date.substring(0, 10) : latestFollowUp.date.toISOString().substring(0, 10)) : '';
+      const datePart = latestFollowUp.date ? (typeof latestFollowUp.date === 'string' ? latestFollowUp.date.substring(0, 10) : new Date(latestFollowUp.date).toISOString().substring(0, 10)) : '';
       newActivities.push({
         message: `Follow-up added for ${datePart}${latestFollowUp.note ? ' | Note: ' + latestFollowUp.note : ''}`,
         by: req.user ? req.user._id : undefined,

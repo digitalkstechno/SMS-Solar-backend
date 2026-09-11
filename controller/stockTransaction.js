@@ -222,6 +222,7 @@ exports.exportStockTransactions = async (req, res) => {
     const reportTitle = type === 'OUT' ? 'Stock Out Report' : 'Stock In Report';
     const sheet = workbook.addWorksheet(reportTitle, {
       pageSetup: { fitToPage: true, orientation: "landscape" },
+      views: [{ state: "frozen", ySplit: 4 }],
     });
 
     const TOTAL_COLS = 9;

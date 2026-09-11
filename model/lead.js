@@ -61,6 +61,10 @@ const LeadSchema = new Schema(
     projecttype: {
       type: String,
     },
+    note: {
+      type: String,
+      trim: true,
+    },
     lostReason: {
       type: String,
     },
