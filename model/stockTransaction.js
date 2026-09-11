@@ -26,6 +26,7 @@ const StockTransactionSchema = new Schema(
     note: {
       type: String,
       trim: true,
+      required: [true, "Note is required"],
     },
     leadId: {
       type: mongoose.Schema.Types.ObjectId,
