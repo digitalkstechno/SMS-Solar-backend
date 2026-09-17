@@ -1332,7 +1332,11 @@
               if (!quotation || !quotation.rows) return '';
               if (!Array.isArray(titles)) titles = [titles];
               for (let t of titles) {
-                let r = quotation.rows.find(row => row && row.title && (row.title.toLowerCase().trim() === t.toLowerCase().trim() || row.title.toLowerCase().includes(t.toLowerCase())));
+                let r = quotation.rows.find(row => row && row.title && row.title.toLowerCase().trim() === t.toLowerCase().trim());
+                if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
+              }
+              for (let t of titles) {
+                let r = quotation.rows.find(row => row && row.title && row.title.toLowerCase().includes(t.toLowerCase().trim()));
                 if (r && r.values && r.values[0] && r.values[0].trim()) return r.values[0].trim();
               }
               return '';
@@ -1348,7 +1352,10 @@
             if (dcProt && dcProt !== acProt) acdcArray.push(dcProt);
             let bomAcdcDcdb = acdcArray.length > 0 ? acdcArray.join(' / ') : 'Simens';
 
-            let bomCable = getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
+            let bomAcCable = getRowVal(['ac cable', 'ac cable product']) || getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
+            let bomDcCable = getRowVal(['dc cable', 'dc cable product']) || getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
+            let bomEarthingCable = getRowVal(['earthing cable', 'earthing cable product']) || getRowVal(['solar cable product', 'solar cable', 'cable']) || 'Polycab 4 SQMM';
+            let bomLaCable = getRowVal(['la cable', 'la cable product']) || 'Polycab 16SQMM (AL)';
             let bomStructure = getRowVal(['structure product', 'structure']) || 'Hindustan 60 x 40 2 mm ( 80 x 40 x 2mm if required )';
           %>
           <table class="spec-table">
@@ -1378,28 +1385,28 @@
                 <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_AC CABLE.jpeg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">AC CABLE</td>
-                <td class="desc-col"><b><%= bomCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                <td class="desc-col"><b><%= bomAcCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
                   60228), temperature rating -10°C to +70°C.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/optimized_DC CABLE.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">DC CABLE</td>
-                <td class="desc-col"><b><%= bomCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
+                <td class="desc-col"><b><%= bomDcCable %></b><br>Class 5 flexible stranded copper (as per IS 8130 / IEC
                   60228), temperature rating -40°C to +120°C.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/EARTHING CABLE.jpg"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">EARTHING CABLE</td>
-                <td class="desc-col"><b><%= bomCable %></b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
+                <td class="desc-col"><b><%= bomEarthingCable %></b><br>green earthing cable as per IS 8130 / IEC 60228, stranded
                   for flexibility.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/LA CABLE.png"
                     style="width:75px; height:75px; object-fit:contain;" /></td>
                 <td class="title-col">LA CABLE</td>
-                <td class="desc-col"><b>Polyccab 16SQMM (AL)</b> XLPE insulated, PVC sheathed.</td>
+                <td class="desc-col"><b><%= bomLaCable %></b><br>XLPE insulated, PVC sheathed.</td>
               </tr>
               <tr>
                 <td class="img-col"><img src="<%= basePath %>/pdfs/materials/PVC PIPE.jpg"
